@@ -9,6 +9,7 @@ import (
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"golang.org/x/crypto/bcrypt"
+	"github.com/satori/go.uuid"
 )
 
 
@@ -17,6 +18,11 @@ type User struct {
     Name 	string 		  `bson:"name,omitempty"`
     Email 	string 		  `bson:"email,omitempty"`
     Hash 	string 		  `bson:"hash,omitempty"`
+}
+
+type Session struct {
+	Email 	string 	`bson:"email,omitempty"`
+	Uuid 	string 	`bson:"uuid,omitempty"`
 }
 
 
@@ -96,7 +102,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm();
 	email := r.PostFormValue("email")
 	password := r.PostFormValue("password")
-	result := User{}
+	retUser := User{}
 
 	session, err := mgo.Dial("mongodb://127.0.0.1:27017")		
 	if err != nil {
@@ -106,18 +112,37 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 	col := session.DB("webdev").C("users")
 
-	err = col.Find(bson.M{"email": email}).One(&result)
+	err = col.Find(bson.M{"email": email}).One(&retUser)
 
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("\nResult: ", result)
+	fmt.Println("\nResult: ", retUser)
 
-	pwd_match := bcrypt.CompareHashAndPassword([]byte(result.Hash), []byte(password))
+	pwd_match := bcrypt.CompareHashAndPassword([]byte(retUser.Hash), []byte(password))
 
 	if pwd_match == nil {
-		fmt.Printf("\nUser: %s, has logged in.", result.Name)
+
+		session_cookie, err := r.Cookie("session")
+
+		if err != nil {
+			user_uuid := uuid.NewV4()
+			session_cookie = &http.Cookie{
+				Name: "session",
+				Value: user_uuid.String(),
+				HttpOnly: true,
+			}
+			http.SetCookie(w, session_cookie)
+
+			sCol := session.DB("webdev").C("sessions")
+			sCol.Insert(Session{email, user_uuid.String()})
+
+			fmt.Printf("\nUser: %s, has logged in with Session ID UUID: '%s'", retUser.Name, user_uuid)	
+		} else {
+			fmt.Printf("\nUser: %s, is ALREADY logged in with Session ID UUID: '%s'", retUser.Name, session_cookie.Value)	
+		}
+
 	} else {
 		fmt.Printf("\nNAH, YOU TRIED IT. YAH FAILED. GO AGAIN.")
 	}
