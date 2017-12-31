@@ -14,7 +14,6 @@ import (
 
 
 type User struct {
-	// Id 		bson.ObjectId `bson:"_id,omitempty"`
     Name 	string 		  `bson:"name,omitempty"`
     Email 	string 		  `bson:"email,omitempty"`
     Hash 	string 		  `bson:"hash,omitempty"`
@@ -37,6 +36,7 @@ func main() {
 	http.HandleFunc("/", home)
 	http.HandleFunc("/register", register)
 	http.HandleFunc("/login", login)
+	http.HandleFunc("/logout", logout)
 
 	fmt.Printf("About to listen on port :3000. Go to https://127.0.0.1:3000/\n")
 	log.Fatal(http.ListenAndServe(":3000", nil))
@@ -56,6 +56,8 @@ func home(res http.ResponseWriter, req *http.Request) {
 
 	tpl.ExecuteTemplate(res, "index.gohtml", pageData)
 }
+
+
 
 
 func register(w http.ResponseWriter, r *http.Request) {
@@ -94,8 +96,11 @@ func register(w http.ResponseWriter, r *http.Request) {
 	// fmt.Printf("User Password: '%s'.\n", password)
 	// fmt.Printf("User Confirm Password: '%s'.\n", confirm_password)
 
+    fmt.Printf("\nRedirecting to the '/' path\n")
 	http.Redirect(w, r, "/", 303)
 }
+
+
 
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -104,26 +109,24 @@ func login(w http.ResponseWriter, r *http.Request) {
 	password := r.PostFormValue("password")
 	retUser := User{}
 
-	session, err := mgo.Dial("mongodb://127.0.0.1:27017")		
+	session, err := mgo.Dial("mongodb://127.0.0.1:27017")	
 	if err != nil {
 		panic(err)
 	}
 	defer session.Close()
 
 	col := session.DB("webdev").C("users")
-
 	err = col.Find(bson.M{"email": email}).One(&retUser)
 
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("\nResult: ", retUser)
+	// fmt.Println("\nResult: ", retUser)
 
 	pwd_match := bcrypt.CompareHashAndPassword([]byte(retUser.Hash), []byte(password))
 
 	if pwd_match == nil {
-
 		session_cookie, err := r.Cookie("session")
 
 		if err != nil {
@@ -140,7 +143,10 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 			fmt.Printf("\nUser: %s, has logged in with Session ID UUID: '%s'", retUser.Name, user_uuid)	
 		} else {
-			fmt.Printf("\nUser: %s, is ALREADY logged in with Session ID UUID: '%s'", retUser.Name, session_cookie.Value)	
+			session_cookie, err := r.Cookie("session")
+			if err == nil {
+				fmt.Printf("\nUser: %s, is ALREADY logged in with Session ID UUID: '%s'", retUser.Name, session_cookie.Value)
+			}
 		}
 
 	} else {
@@ -151,6 +157,40 @@ func login(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", 303)
 }
 
+
+func logout(w http.ResponseWriter, r *http.Request) {
+	session, err := mgo.Dial("mongodb://127.0.0.1:27017")
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+
+	// Connect to the "sessions" collection in "webdev"
+	sCol := session.DB("webdev").C("sessions")
+
+	session_cookie, err := r.Cookie("session")
+
+	if err == nil {
+		// Create a temporary variable to hold a "Session" struct for later use
+		// tempUUID := Session{}
+		// Find ONE document where the "uuid" is the same as the current users session uuid value
+		// sCol.Find(bson.M{"uuid": session_cookie.Value}).One(&tempUUID)
+		// fmt.Println("\nFound the session object im about to delete: ", tempUUID)
+
+		// Remove the document where the "uuid" field is the same as the users session UUID value
+		sCol.Remove(bson.M{"uuid": session_cookie.Value })
+
+		session_cookie = &http.Cookie{
+			Name: "session",
+			Value: "",
+			HttpOnly: true,
+		}
+		http.SetCookie(w, session_cookie)
+	}
+
+	fmt.Printf("\nRedirecting to the '/' path\n")
+	http.Redirect(w, r, "/", 303)
+}
 
 
 
