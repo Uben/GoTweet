@@ -6,9 +6,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	// "log"
 	"net/http"
-	// "text/template"
 	"time"
 )
 
@@ -40,7 +38,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	col := conn.DB("webdev").C("users")
 
 	// Find one user with the email value of 'email' in the "users" collection
-	err = col.Find(bson.M{"email": email}).One(&retUser)
+	err = col.Find(bson.M{"email": string(email)}).One(&retUser)
 
 	if err != nil {
 		panic(err)
@@ -51,24 +49,34 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 	// if the password match ^ (above) ^ doesnt return a error then continue
 	if pwd_match == nil {
-		// Get the "session" cookie
-		session_cookie, err := r.Cookie("session")
+		fmt.Printf("\nCreating the session for the user '%s'.\n", retUser.Name)
+
+		// // Get the "session" cookie
+		// session_cookie, err := r.Cookie("session")
 
 		if err == nil {
 			// Create a new UUID for the session
 			user_uuid := uuid.NewV4()
 
+			// Set cookie Expire date to one day from now
+			expire := time.Now().AddDate(0, 0, 1)
+
 			// Set the "session" cookie values
-			session_cookie = &http.Cookie{
+			session_cookie := &http.Cookie{
 				Name:     "session",
 				Value:    user_uuid.String(),
 				HttpOnly: true,
+				Path:     "/",
+				Expires:  expire,
+				MaxAge:   86400,
 			}
+
 			// Set the Cookie
 			http.SetCookie(w, session_cookie)
 
 			// Connect to the database "webdev" and access the "sessions" collection
 			sCol := conn.DB("webdev").C("sessions")
+
 			// Insert the session struct in the 'session' collection in the database
 			sCol.Insert(Session{email, user_uuid.String()})
 
@@ -159,7 +167,7 @@ func is_user_logged_in(r *http.Request) (bool, int) {
 			// Check if the value of 'uuid' in the found document is equal to the 'Value' in 'session_cookie'
 			if retSession.Uuid == session_cookie.Value {
 				fmt.Println("\nSession: ", retSession)
-				fmt.Println("\nUser %s is logged in with session: %s.", session_cookie.Value, retSession.Email)
+				fmt.Printf("\nUser '%s' is logged in with session: '%s'.", retSession.Email, session_cookie.Value)
 				return true, 1
 			} else {
 				fmt.Println("\nUser is NOT logged in.\n")
