@@ -1,11 +1,11 @@
 package main
 
 import (
+	// "database/sql"
 	"fmt"
+	_ "github.com/lib/pq"
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"time"
 )
@@ -13,8 +13,9 @@ import (
 // Create a struct for querying Session information
 // Added bson tags to allow mgo to query mongoDB
 type Session struct {
-	Email string `bson:"email,omitempty"`
-	Uuid  string `bson:"uuid,omitempty"`
+	Id      int
+	User_id int
+	Token   string
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -25,20 +26,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 	password := r.PostFormValue("password")
 	retUser := User{}
 
-	// Create a connection to the database
-	conn, err := mgo.Dial("mongodb://127.0.0.1:27017")
-	// Check of there is an error connecting to the database
-	if err != nil {
-		panic(err)
-	}
-	// Defer closing the connection to the end of this function
-	defer conn.Close()
-
-	// Connect to the database "webdev" and access the "users" collection
-	col := conn.DB("webdev").C("users")
-
-	// Find one user with the email value of 'email' in the "users" collection
-	err = col.Find(bson.M{"email": string(email)}).One(&retUser)
+	// Get the user info and scan it into the user struct
+	err := Db.QueryRow("select id, name, email, password from users where email = $1 limit 1", email).Scan(&retUser.Id, &retUser.Name, &retUser.Email, &retUser.Hash)
 
 	if err != nil {
 		panic(err)
@@ -50,9 +39,6 @@ func login(w http.ResponseWriter, r *http.Request) {
 	// if the password match ^ (above) ^ doesnt return a error then continue
 	if pwd_match == nil {
 		fmt.Printf("\nCreating the session for the user '%s'.\n", retUser.Name)
-
-		// // Get the "session" cookie
-		// session_cookie, err := r.Cookie("session")
 
 		if err == nil {
 			// Create a new UUID for the session
@@ -74,25 +60,27 @@ func login(w http.ResponseWriter, r *http.Request) {
 			// Set the Cookie
 			http.SetCookie(w, session_cookie)
 
-			// Connect to the database "webdev" and access the "sessions" collection
-			sCol := conn.DB("webdev").C("sessions")
+			_, err := Db.Exec("insert into sessions (user_id, token) values ($1, $2)", &retUser.Id, user_uuid.String())
 
-			// Insert the session struct in the 'session' collection in the database
-			sCol.Insert(Session{email, user_uuid.String()})
+			if err != nil {
+				panic(err)
+			}
 
 			fmt.Printf("\nUser: %s, has logged in with Session ID UUID: '%s'", retUser.Name, user_uuid)
 		} else {
-
 			// Get the "session" cookie
 			session_cookie, err := r.Cookie("session")
 
 			if err == nil {
 				fmt.Printf("\nUser: %s, is ALREADY logged in with Session ID UUID: '%s'", retUser.Name, session_cookie.Value)
 			}
+
 		}
 
 	} else {
+
 		fmt.Printf("\nNAH, YOU TRIED IT. YAH FAILED. GO AGAIN.")
+
 	}
 
 	fmt.Printf("\nRedirecting to the '/' path\n")
@@ -102,24 +90,15 @@ func login(w http.ResponseWriter, r *http.Request) {
 func logout(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("\nUser accessed the '%s' url path.\n", r.URL.Path)
 
-	// Create a connection to the database
-	conn, err := mgo.Dial("mongodb://127.0.0.1:27017")
-	// Check of there is an error connecting to the database
-	if err != nil {
-		panic(err)
-	}
-	// Defer closing the connection to the end of this function
-	defer conn.Close()
-
-	// Connect to the database "webdev" and access the "sessions" collection
-	sCol := conn.DB("webdev").C("sessions")
-
 	// Get the "session" cookie
 	session_cookie, err := r.Cookie("session")
 
 	if err == nil {
-		// Remove the document where the "uuid" field is the same as the users session UUID value
-		sCol.Remove(bson.M{"uuid": session_cookie.Value})
+		_, err := Db.Exec("delete from sessions where token = $1", session_cookie.Value)
+
+		if err != nil {
+			panic(err)
+		}
 
 		// Set the "session" cookie values
 		session_cookie = &http.Cookie{
@@ -140,18 +119,6 @@ func logout(w http.ResponseWriter, r *http.Request) {
 func is_user_logged_in(r *http.Request) (bool, int) {
 	fmt.Printf("\nChecking if the user is logged in.\n")
 
-	// Create a connection to the database
-	conn, err := mgo.Dial("mongodb://127.0.0.1:27017")
-	// Check of there is an error connecting to the database
-	if err != nil {
-		panic(err)
-	}
-	// Defer closing the connection to the end of this function
-	defer conn.Close()
-
-	// Connect to the database "webdev" and access the "sessions" collection
-	sCol := conn.DB("webdev").C("sessions")
-
 	// Get the "session" cookie
 	session_cookie, err := r.Cookie("session")
 	// Create an empty session struct
@@ -159,15 +126,16 @@ func is_user_logged_in(r *http.Request) (bool, int) {
 
 	// If there isnt an error && the value of 'session_cookie' isnt equal to ""
 	if (err == nil) && (session_cookie.Value != "") {
-		// Find a document with a 'Uuid' value that is equal to the session cookie
-		err = sCol.Find(bson.M{"uuid": session_cookie.Value}).One(&retSession)
+
+		// Find a document with a 'Token' value that is equal to the session cookie value
+		err := Db.QueryRow("select id, user_id, token from sessions where token = $1", session_cookie.Value).Scan(&retSession.Id, &retSession.User_id, &retSession.Token)
 
 		// If there is no error getting the data
 		if err == nil {
 			// Check if the value of 'uuid' in the found document is equal to the 'Value' in 'session_cookie'
-			if retSession.Uuid == session_cookie.Value {
+			if retSession.Token == session_cookie.Value {
 				fmt.Println("\nSession: ", retSession)
-				fmt.Printf("\nUser '%s' is logged in with session: '%s'.", retSession.Email, session_cookie.Value)
+				fmt.Printf("\nUser is logged in with session: '%s'.", session_cookie.Value)
 				return true, 1
 			} else {
 				fmt.Println("\nUser is NOT logged in.\n")
