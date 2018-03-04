@@ -41,7 +41,6 @@ func handlerIcon(res http.ResponseWriter, req *http.Request) {
 
 func home(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\nUser accessed the '%s' url path.\n", req.URL.Path)
-	// tpl := template.Must(template.ParseFiles("templates/index.gohtml"))
 
 	// Check if user is logged in
 	_, userLoggedInInt := is_user_logged_in(req)
@@ -54,6 +53,11 @@ func home(res http.ResponseWriter, req *http.Request) {
 		"IsUserLoggedIn": string(userLoggedInInt),
 	}
 
-	// Execute the template with the 'pageData' data
-	tpl.ExecuteTemplate(res, "index.gohtml", pageData)
+	// Check if the path is exactly "/" else its a 404 error
+	if req.URL.Path != "/" {
+		tpl.ExecuteTemplate(res, "404.gohtml", pageData)
+	} else {
+		// Execute the template with the 'pageData' data
+		tpl.ExecuteTemplate(res, "index.gohtml", pageData)
+	}
 }
