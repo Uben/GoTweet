@@ -6,6 +6,7 @@ import (
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
+	"time"
 )
 
 // Create a struct for querying User information
@@ -48,8 +49,10 @@ func register(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 
+		// Get the current time
+		currentTime := time.Now()
 		// insert the user into the users table in postgres
-		_, nErr := Db.Exec("insert into users (name, email, password) values ($1, $2, $3)", name, email, hashPass)
+		_, nErr := Db.Exec("insert into users (name, email, password, created_at, updated_at) values ($1, $2, $3, $4, $4)", name, email, hashPass, currentTime)
 
 		// Check of there is an error connecting to the database
 		if nErr != nil {

@@ -11,11 +11,12 @@ import (
 )
 
 // Create a struct for querying Session information
-// Added bson tags to allow mgo to query mongoDB
 type Session struct {
-	Id      int
-	User_id int
-	Token   string
+	Id         int
+	User_id    int
+	Token      string
+	Created_at time.Time
+	Updated_at time.Time
 }
 
 // GET
@@ -74,7 +75,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 			// Set the Cookie
 			http.SetCookie(w, session_cookie)
 
-			_, err := Db.Exec("insert into sessions (user_id, token) values ($1, $2)", &retUser.Id, user_uuid.String())
+			currentTime := time.Now()
+			_, err := Db.Exec("insert into sessions (user_id, token, created_at, updated_at) values ($1, $2, $3, $3)", &retUser.Id, user_uuid.String(), currentTime)
 
 			if err != nil {
 				panic(err)
@@ -159,7 +161,7 @@ func is_user_logged_in(r *http.Request) bool {
 	if (err == nil) && (session_cookie.Value != "") {
 
 		// Find a document with a 'Token' value that is equal to the session cookie value
-		err := Db.QueryRow("select id, user_id, token from sessions where token = $1", session_cookie.Value).Scan(&retSession.Id, &retSession.User_id, &retSession.Token)
+		err := Db.QueryRow("select id, user_id, token, created_at, updated_at from sessions where token = $1", session_cookie.Value).Scan(&retSession.Id, &retSession.User_id, &retSession.Token, &retSession.Created_at, &retSession.Updated_at)
 
 		// If there is no error getting the data
 		if err == nil {
