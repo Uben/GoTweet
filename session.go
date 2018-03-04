@@ -18,6 +18,20 @@ type Session struct {
 	Token   string
 }
 
+// GET
+func user_login(res http.ResponseWriter, req *http.Request) {
+	fmt.Printf("\nUser accessed the '%s' url path.\n", req.URL.Path)
+
+	// Create map to pass data to template
+	pageData := map[string]string{
+		"title": "Login",
+	}
+
+	// Execute the template
+	tpl.ExecuteTemplate(res, "login.html", pageData)
+}
+
+// POST
 func login(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("\nUser accessed the '%s' url path.\n", r.URL.Path)
 
@@ -119,17 +133,16 @@ func logout(w http.ResponseWriter, r *http.Request) {
 func isAuth(h http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		// Check if user is logged in
-		is_user_logged_in(req)
-		// userAuthStatus := is_user_logged_in(req)
+		userAuthStatus := is_user_logged_in(req)
 
 		// if the user is logged in, show the page
-		// if userAuthStatus == true {
-		h.ServeHTTP(res, req)
+		if userAuthStatus == true {
+			h.ServeHTTP(res, req)
 
-		// else have them login
-		// } else {
-		// 	http.Redirect(res, req, "/", 200)
-		// }
+			// else have them login
+		} else {
+			http.Redirect(res, req, "/", 200)
+		}
 
 	})
 }

@@ -6,12 +6,6 @@
 	</head>
 
 	<body>
-		<h1> {{.BodyHeader}} </h1>
-		<p> {{.Paragraph}} </p>
-		<p> {{.UserLoggedIn}} </p>
-		
-		<br />
-		<br />
 		<h3>Register</h3>
 		<form action="/register" method="post">
 			<label for="">Email</label>
@@ -25,19 +19,6 @@
 			
 			<label for="">Confirm Password</label>
 			<input type="password" name="confirm_password" id="form_confirm_password">
-			
-			<button>Submit</button>
-		</form>
-
-		<br />
-		<br />
-		<h3>Login</h3>
-		<form action="/login" method="post">
-			<label for="">Email</label>
-			<input type="email" name="email" id="form_email">
-
-			<label for="">Password</label>
-			<input type="password" name="password" id="form_password">
 			
 			<button>Submit</button>
 		</form>

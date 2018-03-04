@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title> {{.Title}} </title>
+	</head>
+
+	<body>
+		<div>
+			<a href="/register">Sign Up</a>
+			<a href="/login">Login</a>
+		</div>
+		
+		{{ if eq .isUserLoggedIn "true" }}
+			<p>You are logged in</p>
+		{{ end }}
+
+		<h1> {{.BodyHeader}} </h1>
+		<p> {{.Paragraph}} </p>
+
+	</body>
+</html>

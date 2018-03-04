@@ -16,6 +16,20 @@ type User struct {
 	Hash  string
 }
 
+// GET
+func user_register(res http.ResponseWriter, req *http.Request) {
+	fmt.Printf("\nUser accessed the '%s' url path.\n", req.URL.Path)
+
+	// Create map to pass data to template
+	pageData := map[string]string{
+		"title": "Sign Up",
+	}
+
+	// Execute the template
+	tpl.ExecuteTemplate(res, "register.html", pageData)
+}
+
+// POST
 func register(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("\n\nUser accessed the '%s' url path.\n", r.URL.Path)
 
