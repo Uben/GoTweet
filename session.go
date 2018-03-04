@@ -116,7 +116,25 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", 303)
 }
 
-func is_user_logged_in(r *http.Request) (bool, int) {
+func isAuth(h http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		// Check if user is logged in
+		is_user_logged_in(req)
+		// userAuthStatus := is_user_logged_in(req)
+
+		// if the user is logged in, show the page
+		// if userAuthStatus == true {
+		h.ServeHTTP(res, req)
+
+		// else have them login
+		// } else {
+		// 	http.Redirect(res, req, "/", 200)
+		// }
+
+	})
+}
+
+func is_user_logged_in(r *http.Request) bool {
 	fmt.Printf("\nChecking if the user is logged in.\n")
 
 	// Get the "session" cookie
@@ -136,10 +154,10 @@ func is_user_logged_in(r *http.Request) (bool, int) {
 			if retSession.Token == session_cookie.Value {
 				fmt.Println("\nSession: ", retSession)
 				fmt.Printf("\nUser is logged in with session: '%s'.", session_cookie.Value)
-				return true, 1
+				return true
 			} else {
 				fmt.Println("\nUser is NOT logged in.\n")
-				return false, 0
+				return false
 			}
 		} else {
 			panic(err)
@@ -147,6 +165,6 @@ func is_user_logged_in(r *http.Request) (bool, int) {
 
 	} else {
 		fmt.Println("\nUser is NOT logged in.\n")
-		return false, 0
+		return false
 	}
 }
