@@ -168,3 +168,35 @@ func change_user_password(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\nRedirecting to the '/settings' path\n")
 	http.Redirect(res, req, "/settings", 200)
 }
+
+// POST
+
+func delete_user(res http.ResponseWriter, req *http.Request) {
+	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
+
+	req.ParseForm()
+	password := req.PostFormValue("password")
+	retUser := User{}
+
+	user_id, err := req.Cookie("session_uid")
+
+	if err != nil {
+		panic(err)
+	}
+
+	err = Db.QueryRow("select id, password from users where id = $1", user_id.Value).Scan(&retUser.Id, &retUser.Hash)
+
+	pwd_match := bcrypt.CompareHashAndPassword([]byte(retUser.Hash), []byte(password))
+
+	if pwd_match == nil {
+		_, err := Db.Exec("delete from users where id = $1", retUser.Id)
+
+		if err != nil {
+			fmt.Println("Something went wrong. The user failed to be deleted:\n")
+			fmt.Println(err)
+		}
+	}
+
+	fmt.Printf("\nRedirecting to the '/settings' path\n")
+	http.Redirect(res, req, "/logout", 200)
+}

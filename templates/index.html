@@ -17,7 +17,15 @@
 		{{ end }}
 
 		<h1> {{.BodyHeader}} </h1>
-		<p> {{.Paragraph}} </p>	
+		<p> {{.Paragraph}} </p>
+
+		{{ if eq .isUserLoggedIn "true" }}
+			<h3> Tweet </h3>
+			<form action="/create-tweet" method="post">
+				<input type="textarea" name="tweet" placeholder="What are you thinking about?" id="form_tweet">
+				<button> Submit </button>
+			</form>
+		{{ end }}		
 
 	</body>
 </html>
