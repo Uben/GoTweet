@@ -7,6 +7,7 @@ import (
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -33,12 +34,12 @@ func user_login(res http.ResponseWriter, req *http.Request) {
 }
 
 // POST
-func login(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("\nUser accessed the '%s' url path.\n", r.URL.Path)
+func login(res http.ResponseWriter, req *http.Request) {
+	fmt.Printf("\nUser accessed the '%s' url path.\n", req.URL.Path)
 
-	r.ParseForm()
-	email := r.PostFormValue("email")
-	password := r.PostFormValue("password")
+	req.ParseForm()
+	email := req.PostFormValue("email")
+	password := req.PostFormValue("password")
 	retUser := User{}
 
 	// Get the user info and scan it into the user struct
@@ -72,8 +73,19 @@ func login(w http.ResponseWriter, r *http.Request) {
 				MaxAge:   86400,
 			}
 
-			// Set the Cookie
-			http.SetCookie(w, session_cookie)
+			// Set the "session" cookie values
+			session_uid_cookie := &http.Cookie{
+				Name:     "session_uid",
+				Value:    strconv.Itoa(retUser.Id),
+				HttpOnly: true,
+				Path:     "/",
+				Expires:  expire,
+				MaxAge:   86400,
+			}
+
+			// Set the Cookies
+			http.SetCookie(res, session_cookie)
+			http.SetCookie(res, session_uid_cookie)
 
 			currentTime := time.Now()
 			_, err := Db.Exec("insert into sessions (user_id, token, created_at, updated_at) values ($1, $2, $3, $3)", &retUser.Id, user_uuid.String(), currentTime)
@@ -85,7 +97,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("\nUser: %s, has logged in with Session ID UUID: '%s'", retUser.Name, user_uuid)
 		} else {
 			// Get the "session" cookie
-			session_cookie, err := r.Cookie("session")
+			session_cookie, err := req.Cookie("session")
 
 			if err == nil {
 				fmt.Printf("\nUser: %s, is ALREADY logged in with Session ID UUID: '%s'", retUser.Name, session_cookie.Value)
@@ -100,7 +112,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Printf("\nRedirecting to the '/' path\n")
-	http.Redirect(w, r, "/", 303)
+	http.Redirect(res, req, "/", 303)
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
@@ -124,8 +136,19 @@ func logout(w http.ResponseWriter, r *http.Request) {
 			MaxAge:   -10,
 			Expires:  time.Now(),
 		}
-		// Set the Cookie
+
+		// Set the "session" cookie values
+		session_uid_cookie := &http.Cookie{
+			Name:     "session_uid",
+			Value:    "",
+			HttpOnly: true,
+			MaxAge:   -10,
+			Expires:  time.Now(),
+		}
+
+		// Set the Cookies
 		http.SetCookie(w, session_cookie)
+		http.SetCookie(w, session_uid_cookie)
 	}
 
 	fmt.Printf("\nRedirecting to the '/' path\n")
@@ -163,19 +186,14 @@ func is_user_logged_in(r *http.Request) bool {
 		// Find a document with a 'Token' value that is equal to the session cookie value
 		err := Db.QueryRow("select id, user_id, token, created_at, updated_at from sessions where token = $1", session_cookie.Value).Scan(&retSession.Id, &retSession.User_id, &retSession.Token, &retSession.Created_at, &retSession.Updated_at)
 
-		// If there is no error getting the data
-		if err == nil {
-			// Check if the value of 'uuid' in the found document is equal to the 'Value' in 'session_cookie'
-			if retSession.Token == session_cookie.Value {
-				fmt.Println("\nSession: ", retSession)
-				fmt.Printf("\nUser is logged in with session: '%s'.", session_cookie.Value)
-				return true
-			} else {
-				fmt.Println("\nUser is NOT logged in.\n")
-				return false
-			}
+		// If there is no error getting the data && Check if the value of 'uuid' in the found document is equal to the 'Value' in 'session_cookie'
+		if (err == nil) && (retSession.Token == session_cookie.Value) {
+			fmt.Println("\nSession: ", retSession)
+			fmt.Printf("\nUser is logged in with session: '%s'.", session_cookie.Value)
+			return true
 		} else {
-			panic(err)
+			fmt.Println("\nUser is NOT logged in.\n")
+			return false
 		}
 
 	} else {

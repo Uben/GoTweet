@@ -32,8 +32,11 @@ func main() {
 
 	gmux.HandleFunc("/login", user_login).Methods("GET")
 	gmux.HandleFunc("/login", login).Methods("POST")
-
 	gmux.HandleFunc("/logout", isAuth(logout)).Methods("GET")
+
+	gmux.HandleFunc("/settings", update_user).Methods("GET")
+	gmux.HandleFunc("/update-user-info", change_user_info).Methods("POST")
+	gmux.HandleFunc("/update-user-password", change_user_password).Methods("POST")
 
 	gmux.HandleFunc("/favicon.ico", handlerIcon).Methods("GET")
 	gmux.HandleFunc("/", home).Methods("GET")
@@ -51,9 +54,9 @@ func home(res http.ResponseWriter, req *http.Request) {
 
 	// Create map to pass data to template
 	pageData := map[string]string{
-		"Title":      "Bernin Uben | Software Developer",
+		"Title":      "Bernin Uben | Base Golang Web App",
 		"BodyHeader": "Welcome to the Starting Block",
-		"Paragraph":  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Urna cursus eget nunc scelerisque viverra. Tincidunt nunc pulvinar sapien et ligula ullamcorper. Suspendisse potenti nullam ac tortor vitae.",
+		"Paragraph":  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.",
 	}
 
 	if is_user_logged_in(req) {
