@@ -115,6 +115,7 @@ func login(res http.ResponseWriter, req *http.Request) {
 	http.Redirect(res, req, "/", 303)
 }
 
+// GET
 func logout(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("\nUser accessed the '%s' url path.\n", r.URL.Path)
 
