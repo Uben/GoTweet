@@ -11,10 +11,13 @@ import (
 
 // Create a struct for querying User information
 type User struct {
-	Id    int
-	Name  string
-	Email string
-	Hash  string
+	Id         int
+	Name       string
+	Email      string
+	Username   string
+	Hash       string
+	Created_at time.Time
+	Updated_at time.Time
 }
 
 // GET
@@ -37,6 +40,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	name := r.PostFormValue("name")
 	email := r.PostFormValue("email")
+	username := r.PostFormValue("username")
 	password := r.PostFormValue("password")
 	confirm_password := r.PostFormValue("confirm_password")
 
@@ -52,7 +56,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 		// Get the current time
 		currentTime := time.Now()
 		// insert the user into the users table in postgres
-		_, nErr := Db.Exec("insert into users (name, email, password, created_at, updated_at) values ($1, $2, $3, $4, $4)", name, email, hashPass, currentTime)
+		_, nErr := Db.Exec("insert into users (name, email, username, password, created_at, updated_at) values ($1, $2, $3, $4, $5, $5)", name, email, username, hashPass, currentTime)
 
 		// Check of there is an error connecting to the database
 		if nErr != nil {

@@ -42,7 +42,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	retUser := User{}
 
 	// Get the user info and scan it into the user struct
-	err := Db.QueryRow("select id, name, email, password from users where email = $1 limit 1", email).Scan(&retUser.Id, &retUser.Name, &retUser.Email, &retUser.Hash)
+	err := Db.QueryRow("select id, name, email, username, password, created_at, updated_at from users where email = $1 limit 1", email).Scan(&retUser.Id, &retUser.Name, &retUser.Email, &retUser.Username, &retUser.Hash, &retUser.Created_at, &retUser.Updated_at)
 
 	if err != nil {
 		panic(err)
