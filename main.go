@@ -41,6 +41,9 @@ func main() {
 	gmux.HandleFunc("/create-tweet", tweet_create).Methods("POST")
 	gmux.HandleFunc("/delete-tweet/{tweet_id}", tweet_delete).Methods("POST")
 
+	gmux.HandleFunc("/follow-user/{user_id}", create_user_follow).Methods("POST")
+	gmux.HandleFunc("/unfollow-user/{user_id}", delete_user_follow).Methods("POST")
+
 	gmux.HandleFunc("/favicon.ico", handlerIcon).Methods("GET")
 	gmux.HandleFunc("/", home).Methods("GET")
 
