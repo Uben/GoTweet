@@ -36,11 +36,23 @@ func create_user_follow(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Printf("\nRedirecting to the '/' path\n")
-	http.Redirect(res, req, "/", 200)
 }
 
 func delete_user_follow(res http.ResponseWriter, req *http.Request) {
+	fmt.Printf("\nUser accessed the '%s' url path.\n", req.URL.Path)
 
+	follower_id, err := req.Cookie("session_uid")
+
+	if err != nil {
+		panic(err)
+	}
+
+	url_params := mux.Vars(req)
+	following_id := url_params["user_id"]
+
+	_, err = Db.Exec("delete from user_follows where follower_id = $1 AND following_id = $2", follower_id.Value, following_id)
+
+	if err != nil {
+		panic(err)
+	}
 }
