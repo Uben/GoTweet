@@ -20,6 +20,15 @@ type User struct {
 	Updated_at time.Time
 }
 
+type User_meta struct {
+	Id          int
+	User_id     int
+	Description string
+	Url         string
+	Created_at  time.Time
+	Updated_at  time.Time
+}
+
 // GET
 func user_register(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\nUser accessed the '%s' url path.\n", req.URL.Path)
@@ -37,6 +46,7 @@ func user_register(res http.ResponseWriter, req *http.Request) {
 func register(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
 
+	var user_id int
 	req.ParseForm()
 	name := req.PostFormValue("name")
 	email := req.PostFormValue("email")
@@ -56,10 +66,16 @@ func register(res http.ResponseWriter, req *http.Request) {
 		// Get the current time
 		currentTime := time.Now()
 		// insert the user into the users table in postgres
-		_, nErr := Db.Exec("insert into users (name, email, username, password, created_at, updated_at) values ($1, $2, $3, $4, $5, $5)", name, email, username, hashPass, currentTime)
+		nErr := Db.QueryRow("insert into users (name, email, username, password, created_at, updated_at) values ($1, $2, $3, $4, $5, $5) returning id", name, email, username, hashPass, currentTime).Scan(&user_id)
 
 		// Check of there is an error connecting to the database
-		if nErr != nil {
+		if nErr == nil {
+			_, err = Db.Exec("insert into user_meta (user_id, created_at, updated_at) values ($1, $2, $2)", user_id, currentTime)
+
+			if err != nil {
+				panic(nErr)
+			}
+		} else {
 			panic(nErr)
 		}
 	}
@@ -72,21 +88,35 @@ func register(res http.ResponseWriter, req *http.Request) {
 func update_user(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\nUser accessed the '%s' url path.\n", req.URL.Path)
 
-	user_id, err := req.Cookie("session_uid")
 	retUser := User{}
+	retMeta := User_meta{}
+
+	user_id, err := req.Cookie("session_uid")
 
 	if err != nil {
 		panic(err)
 	}
 
-	err = Db.QueryRow("select id, name, email, username from users where id = $1", user_id.Value).Scan(&retUser.Id, &retUser.Name, &retUser.Email, &retUser.Username)
+	err = Db.QueryRow("select name, email, username from users where id = $1", user_id.Value).Scan(&retUser.Name, &retUser.Email, &retUser.Username)
+
+	if err != nil {
+		panic(err)
+	}
+
+	err = Db.QueryRow("select description, url from user_meta where user_id = $1", user_id.Value).Scan(&retMeta.Description, &retMeta.Url)
+
+	if err != nil {
+		panic(err)
+	}
 
 	// Create map to pass data to template
 	pageData := map[string]string{
-		"Title":    "Account Settings | Base Golang Web App",
-		"Name":     retUser.Name,
-		"Email":    retUser.Email,
-		"Username": retUser.Username,
+		"Title":       "Account Settings | Base Golang Web App",
+		"Name":        retUser.Name,
+		"Email":       retUser.Email,
+		"Username":    retUser.Username,
+		"Description": retMeta.Description,
+		"Url":         retMeta.Url,
 	}
 
 	if is_user_logged_in(req) {
@@ -119,6 +149,32 @@ func change_user_info(res http.ResponseWriter, req *http.Request) {
 	}
 
 	fmt.Printf("\nRedirecting to the '/' path\n")
+	http.Redirect(res, req, "/settings", 200)
+}
+
+// POST
+func change_user_meta(res http.ResponseWriter, req *http.Request) {
+	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
+
+	req.ParseForm()
+	bio := req.PostFormValue("bio")
+	url := req.PostFormValue("url")
+
+	user_id, err := req.Cookie("session_uid")
+
+	if err != nil {
+		panic(err)
+	}
+
+	current_time := time.Now()
+
+	_, err = Db.Exec("update user_meta set description = $2, url = $3, updated_at = $4 where user_id = $1", user_id.Value, bio, url, current_time)
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("\nRedirecting to the '/settings' path\n")
 	http.Redirect(res, req, "/settings", 200)
 }
 

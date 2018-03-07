@@ -36,6 +36,7 @@ func main() {
 
 	gmux.HandleFunc("/settings", update_user).Methods("GET")
 	gmux.HandleFunc("/update-user-info", change_user_info).Methods("POST")
+	gmux.HandleFunc("/update-user-meta", change_user_meta).Methods("POST")
 	gmux.HandleFunc("/update-user-password", change_user_password).Methods("POST")
 
 	gmux.HandleFunc("/create-tweet", tweet_create).Methods("POST")

@@ -19,7 +19,24 @@
 			
 			<button>Submit</button>
 		</form>
-		
+
+		<br>
+		<br>	
+		<hr>
+		<br>
+		<br>
+
+		<h3> Update Account Details </h3>
+		<form action="/update-user-meta" method="post">
+			<label for="">Biography</label>
+			<input type="text" name="bio" value="{{ .Description }}" id="form_bio">
+
+			<label for="">Url</label>
+			<input type="text" name="url" value="{{ .Url }}" id="form_url">
+			
+			<button>Submit</button>
+		</form>
+
 		<br>
 		<br>	
 		<hr>
