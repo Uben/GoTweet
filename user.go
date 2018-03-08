@@ -3,8 +3,10 @@ package main
 import (
 	// "database/sql"
 	"fmt"
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
+	"log"
 	"net/http"
 	"time"
 )
@@ -35,7 +37,7 @@ func user_register(res http.ResponseWriter, req *http.Request) {
 
 	// Create map to pass data to template
 	pageData := map[string]string{
-		"title": "Sign Up",
+		"Title": "Sign Up",
 	}
 
 	// Execute the template
@@ -111,7 +113,7 @@ func update_user(res http.ResponseWriter, req *http.Request) {
 
 	// Create map to pass data to template
 	pageData := map[string]string{
-		"Title":       "Account Settings | Base Golang Web App",
+		"Title":       "Settings",
 		"Name":        retUser.Name,
 		"Email":       retUser.Email,
 		"Username":    retUser.Username,
@@ -226,7 +228,6 @@ func change_user_password(res http.ResponseWriter, req *http.Request) {
 }
 
 // POST
-
 func delete_user(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
 
@@ -255,4 +256,76 @@ func delete_user(res http.ResponseWriter, req *http.Request) {
 
 	fmt.Printf("\nRedirecting to the '/settings' path\n")
 	http.Redirect(res, req, "/logout", 200)
+}
+
+func show_user_profile(res http.ResponseWriter, req *http.Request) {
+	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
+
+	retUser := User{}
+	retMeta := User_meta{}
+	url_params := mux.Vars(req)
+	user_id := url_params["user_id"]
+
+	err := Db.QueryRow("select id, name, email, username, password, created_at, updated_at from users where id = $1", user_id).Scan(&retUser.Id, &retUser.Name, &retUser.Email, &retUser.Username, &retUser.Hash, &retUser.Created_at, &retUser.Updated_at)
+
+	if err != nil {
+		panic(err)
+	}
+
+	err = Db.QueryRow("select description, url from user_meta where user_id = $1", user_id).Scan(&retMeta.Description, &retMeta.Url)
+
+	if err != nil {
+		panic(err)
+	}
+
+	pageData := map[string]interface{}{
+		"LoggedInUID": string(user_id),
+		"ProfileUID":  string(retUser.Id),
+		"Title":       retUser.Username + " | Profile",
+		"Name":        retUser.Name,
+		"Email":       retUser.Email,
+		"Username":    retUser.Username,
+		"Description": retMeta.Description,
+		"Url":         retMeta.Url,
+		"Tweets":      getUserTweets(user_id),
+	}
+
+	if err == nil && is_user_logged_in(req) {
+		pageData["isUserLoggedIn"] = true
+	} else {
+		pageData["isUserLoggedIn"] = false
+	}
+
+	tpl.ExecuteTemplate(res, "profile.html", pageData)
+}
+
+func getUserTweets(user_id string) []Tweet {
+	fmt.Printf("\nGetting Tweets :o\n")
+
+	var tweets []Tweet
+
+	// get user follow relations and use that to find all the tweets of the users the current logged in user follows, use 'group by' and 'count(*)' to do duplicate checking, and then order by the time created
+	rows, err := Db.Query("select id, user_id, msg, created_at from tweets where user_id = $1 order by created_at desc limit 15", user_id)
+
+	if err != nil {
+		panic(err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		tweet := Tweet{}
+
+		if err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Message, &tweet.Created_at); err != nil {
+			log.Fatal(err)
+		}
+
+		tweets = append(tweets, tweet)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	return tweets
 }

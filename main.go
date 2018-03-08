@@ -42,7 +42,8 @@ func main() {
 	gmux.HandleFunc("/create-tweet", tweet_create).Methods("POST")
 	gmux.HandleFunc("/delete-tweet/{tweet_id}", tweet_delete).Methods("POST")
 
-	gmux.HandleFunc("/follow-user/{user_id}", create_user_follow).Methods("GET")
+	gmux.HandleFunc("/profile/{user_id}", show_user_profile).Methods("GET")
+	gmux.HandleFunc("/follow-user/{user_id}", create_user_follow).Methods("POST")
 	gmux.HandleFunc("/unfollow-user/{user_id}", delete_user_follow).Methods("POST")
 
 	gmux.HandleFunc("/favicon.ico", handlerIcon).Methods("GET")
@@ -61,7 +62,7 @@ func home(res http.ResponseWriter, req *http.Request) {
 
 	// Create map to pass data to template
 	pageData := map[string]interface{}{
-		"Title":      "Bernin Uben | Base Golang Web App",
+		"Title":      "Home | Base Golang Web App",
 		"BodyHeader": "Welcome to the Starting Block",
 		"Paragraph":  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.",
 	}
@@ -93,27 +94,31 @@ func getTweets(user_id string) []Tweet {
 	var tweets []Tweet
 
 	// get user follow relations and use that to find all the tweets of the users the current logged in user follows, use 'group by' and 'count(*)' to do duplicate checking, and then order by the time created
-	rows, err := Db.Query("select t.id, t.user_id, msg, t.created_at, count(*) from user_follows f left join tweets t on f.follower_id = $1 and f.following_id = t.user_id or t.user_id = $1 group by t.id order by t.created_at", user_id)
+	rows, err := Db.Query("select t.id, t.user_id, msg, t.created_at, count(*) from user_follows f left join tweets t on f.follower_id = $1 and f.following_id = t.user_id or t.user_id = $1 group by t.id order by t.created_at desc", user_id)
 
-	if err != nil {
-		panic(err)
-	}
+	if err == sql.ErrNoRows {
+		rows.Close()
 
-	defer rows.Close()
+	} else if err != nil {
+		log.Fatal(err)
 
-	for rows.Next() {
-		tweet := Tweet{}
-		var throwaway int
+	} else {
+		defer rows.Close()
 
-		if err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Message, &tweet.Created_at, &throwaway); err != nil {
-			log.Fatal(err)
+		for rows.Next() {
+			tweet := Tweet{}
+			var throwaway int
+
+			if err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Message, &tweet.Created_at, &throwaway); err != nil {
+				// log.Fatal(err)
+			}
+
+			tweets = append(tweets, tweet)
 		}
 
-		tweets = append(tweets, tweet)
-	}
-
-	if err := rows.Err(); err != nil {
-		log.Fatal(err)
+		if err := rows.Err(); err != nil {
+			// log.Fatal(err)
+		}
 	}
 
 	return tweets

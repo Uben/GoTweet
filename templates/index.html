@@ -1,60 +1,44 @@
-<!DOCTYPE html>
-<html>
+{{ template "header" . }}
 
-	<head>
-		<title> {{.Title}} </title>
-	</head>
-
-	<style type="text/css">
-		body {
-			display: flex;
-			flex-flow: column;
-			align-items: flex-start;
-			justify-content: flex-start;
-
-			max-width: 900px;
-			width: 95%;
-			margin: 0 auto;
-		}
-
+	<style>
 		form {
 			margin: 5px 0 10px;
 		}
 	</style>
+		
+	{{ if eq .isUserLoggedIn "true" }}
+		<p> <a href="/settings">Settings</a> <a href="/logout">Logout</a> </p>
+		<p> You are logged in. </p>
+	{{ else }}
+		<div>
+			<a href="/register">Sign Up</a>
+			<a href="/login">Login</a>
+		</div>
+	{{ end }}
 
-	<body>		
-		{{ if eq .isUserLoggedIn "true" }}
-			<p> <a href="/settings">Settings</a> <a href="/logout">Logout</a> </p>
-			<p> You are logged in. </p>
-		{{ else }}
-			<div>
-				<a href="/register">Sign Up</a>
-				<a href="/login">Login</a>
-			</div>
-		{{ end }}
+	<h1> {{.BodyHeader}} </h1>
+	<p> {{.Paragraph}} </p>
 
-		<h1> {{.BodyHeader}} </h1>
-		<p> {{.Paragraph}} </p>
+	{{ if eq .isUserLoggedIn "true" }}
+		<h3> Tweet </h3>
+		<form action="/create-tweet" method="post">
+			<input type="textarea" name="tweet" placeholder="What are you thinking about?" id="form_tweet">
+			<button> Submit </button>
+		</form>
+	{{ end }}
 
-		{{ if eq .isUserLoggedIn "true" }}
-			<h3> Tweet </h3>
-			<form action="/create-tweet" method="post">
-				<input type="textarea" name="tweet" placeholder="What are you thinking about?" id="form_tweet">
-				<button> Submit </button>
-			</form>
-
-			<div style="display: flex; flex-flow: column; align-items: flex-start;">
+	{{ if eq .isUserLoggedIn "true" }}
+		<div style="display: flex; flex-flow: column; align-items: flex-start;">
 				
-				{{ range $idx, $tweet := .Tweets }}
-					<div style="display: inline-block; margin: 0 0 5px 0;">
-						<p> User ID: {{ $tweet.Id }} </p>
-						<p> {{ $tweet.Message }} </p>
-						<p> {{ $tweet.Created_at }} </p>
-					</div>
-				{{ end }}
+			{{ range $idx, $tweet := .Tweets }}
+				<div style="display: inline-block; margin: 0 0 5px 0;">
+					<p> User ID: {{ $tweet.Id }} </p>
+					<p> {{ $tweet.Message }} </p>
+					<p> {{ $tweet.Created_at }} </p>
+				</div>
+			{{ end }}
 
-			</div>
-		{{ end }}		
+		</div>
+	{{ end }}
 
-	</body>
-</html>
+{{ template "footer" . }}
