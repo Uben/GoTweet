@@ -7,6 +7,7 @@ import (
 	_ "github.com/lib/pq"
 	"log"
 	"net/http"
+	// "strconv"
 	"text/template"
 )
 
@@ -42,7 +43,7 @@ func main() {
 	gmux.HandleFunc("/create-tweet", tweet_create).Methods("POST")
 	gmux.HandleFunc("/delete-tweet/{tweet_id}", tweet_delete).Methods("POST")
 
-	gmux.HandleFunc("/follow-user/{user_id}", create_user_follow).Methods("POST")
+	gmux.HandleFunc("/follow-user/{user_id}", create_user_follow).Methods("GET")
 	gmux.HandleFunc("/unfollow-user/{user_id}", delete_user_follow).Methods("POST")
 
 	gmux.HandleFunc("/favicon.ico", handlerIcon).Methods("GET")
@@ -59,18 +60,28 @@ func handlerIcon(res http.ResponseWriter, req *http.Request) {
 func home(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\nUser accessed the '%s' url path.\n", req.URL.Path)
 
+	user_id, err := req.Cookie("session_uid")
+
 	// Create map to pass data to template
-	pageData := map[string]string{
+	pageData := map[string]interface{}{
 		"Title":      "Bernin Uben | Base Golang Web App",
 		"BodyHeader": "Welcome to the Starting Block",
 		"Paragraph":  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.",
+		"Tweets":     getTweets(user_id.Value),
 	}
 
-	if is_user_logged_in(req) {
+	if err != nil {
+		fmt.Printf("\nUSER ISNT NOT LOGGED IN\n")
+		pageData["isUserLoggedIn"] = "false"
+
+	} else if is_user_logged_in(req) {
 		pageData["isUserLoggedIn"] = "true"
+
 	} else {
 		pageData["isUserLoggedIn"] = "false"
 	}
+
+	fmt.Println(pageData)
 
 	// Check if the path is exactly "/" else its a 404 error
 	if req.URL.Path != "/" {
@@ -80,4 +91,36 @@ func home(res http.ResponseWriter, req *http.Request) {
 	} else {
 		tpl.ExecuteTemplate(res, "index.html", pageData)
 	}
+}
+
+func getTweets(user_id string) []Tweet {
+	fmt.Printf("\nGetting Tweets :o\n")
+
+	var tweets []Tweet
+
+	// get user follow relations and use that to find all the tweets of the users the current logged in user follows, use 'group by' and 'count(*)' to do duplicate checking, and then order by the time created
+	rows, err := Db.Query("select t.id, t.user_id, msg, t.created_at, count(*) from user_follows f left join tweets t on f.follower_id = $1 and f.following_id = t.user_id or t.user_id = $1 group by t.id order by t.created_at", user_id)
+
+	if err != nil {
+		panic(err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		tweet := Tweet{}
+		var throwaway int
+
+		if err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Message, &tweet.Created_at, &throwaway); err != nil {
+			log.Fatal(err)
+		}
+
+		tweets = append(tweets, tweet)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	return tweets
 }
