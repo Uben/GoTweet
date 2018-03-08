@@ -83,9 +83,20 @@ func login(res http.ResponseWriter, req *http.Request) {
 				MaxAge:   86400,
 			}
 
+			// Set the "session" cookie values
+			session_username_cookie := &http.Cookie{
+				Name:     "session_username",
+				Value:    retUser.Username,
+				HttpOnly: true,
+				Path:     "/",
+				Expires:  expire,
+				MaxAge:   86400,
+			}
+
 			// Set the Cookies
 			http.SetCookie(res, session_cookie)
 			http.SetCookie(res, session_uid_cookie)
+			http.SetCookie(res, session_username_cookie)
 
 			currentTime := time.Now()
 			_, err := Db.Exec("insert into sessions (user_id, token, created_at, updated_at) values ($1, $2, $3, $3)", &retUser.Id, user_uuid.String(), currentTime)
@@ -147,9 +158,19 @@ func logout(w http.ResponseWriter, r *http.Request) {
 			Expires:  time.Now(),
 		}
 
+		// Set the "session" cookie values
+		session_username_cookie := &http.Cookie{
+			Name:     "session_username",
+			Value:    "",
+			HttpOnly: true,
+			MaxAge:   -10,
+			Expires:  time.Now(),
+		}
+
 		// Set the Cookies
 		http.SetCookie(w, session_cookie)
 		http.SetCookie(w, session_uid_cookie)
+		http.SetCookie(w, session_username_cookie)
 	}
 
 	fmt.Printf("\nRedirecting to the '/' path\n")
