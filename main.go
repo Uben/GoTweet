@@ -7,7 +7,6 @@ import (
 	_ "github.com/lib/pq"
 	"log"
 	"net/http"
-	// "strconv"
 	"text/template"
 )
 
@@ -60,23 +59,18 @@ func handlerIcon(res http.ResponseWriter, req *http.Request) {
 func home(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\nUser accessed the '%s' url path.\n", req.URL.Path)
 
-	user_id, err := req.Cookie("session_uid")
-
 	// Create map to pass data to template
 	pageData := map[string]interface{}{
 		"Title":      "Bernin Uben | Base Golang Web App",
 		"BodyHeader": "Welcome to the Starting Block",
 		"Paragraph":  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.",
-		"Tweets":     getTweets(user_id.Value),
 	}
 
-	if err != nil {
-		fmt.Printf("\nUSER ISNT NOT LOGGED IN\n")
-		pageData["isUserLoggedIn"] = "false"
+	user_id, err := req.Cookie("session_uid")
 
-	} else if is_user_logged_in(req) {
+	if err == nil && is_user_logged_in(req) {
 		pageData["isUserLoggedIn"] = "true"
-
+		pageData["Tweets"] = getTweets(user_id.Value)
 	} else {
 		pageData["isUserLoggedIn"] = "false"
 	}
