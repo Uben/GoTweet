@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+	// "database/sql"
 	"fmt"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
@@ -12,7 +12,16 @@ import (
 type Tweet struct {
 	Id         int
 	User_id    int
-	Message    sql.NullString
+	Message    string
+	Created_at time.Time
+}
+
+type metaTweet struct {
+	Id         int
+	User_id    int
+	Name       string
+	Username   string
+	Message    string
 	Created_at time.Time
 }
 

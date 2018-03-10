@@ -43,8 +43,8 @@ func main() {
 	gmux.HandleFunc("/delete-tweet/{tweet_id}", tweet_delete).Methods("POST")
 
 	gmux.HandleFunc("/profile/{user_id}", show_user_profile).Methods("GET")
-	gmux.HandleFunc("/follow-user/{user_id}", create_user_follow).Methods("POST")
-	gmux.HandleFunc("/unfollow-user/{user_id}", delete_user_follow).Methods("POST")
+	gmux.HandleFunc("/follow-user/{user_id}", create_user_follow).Methods("GET")
+	gmux.HandleFunc("/unfollow-user/{user_id}", delete_user_follow).Methods("GET")
 
 	gmux.HandleFunc("/favicon.ico", handlerIcon).Methods("GET")
 	gmux.HandleFunc("/", home).Methods("GET")
@@ -72,7 +72,7 @@ func home(res http.ResponseWriter, req *http.Request) {
 	if err == nil {
 		pageData["isUserLoggedIn"] = true
 
-		if foundTweets, userTweets := getUserTweets(user_id.Value); foundTweets == true {
+		if foundTweets, userTweets := getTweets(user_id.Value); foundTweets == true {
 			pageData["foundTweets"] = true
 			pageData["Tweets"] = userTweets
 		} else {
@@ -83,18 +83,21 @@ func home(res http.ResponseWriter, req *http.Request) {
 		pageData["isUserLoggedIn"] = false
 	}
 
+	fmt.Printf("\n")
 	fmt.Println(pageData)
+	fmt.Printf("\n")
+
 	tpl.ExecuteTemplate(res, "index.html", pageData)
 }
 
-func getTweets(user_id string) (bool, []Tweet) {
-	fmt.Printf("\nGetting Tweets :o\n")
+func getTweets(user_id string) (bool, []metaTweet) {
+	fmt.Printf("\nGetting Tweets for user $s :o\n", user_id)
 
 	var foundTweets = true
-	var tweets []Tweet
+	var tweets []metaTweet
 
-	// get user follow relations and use that to find all the tweets of the users the current logged in user follows, use 'group by' and 'count(*)' to do duplicate checking, and then order by the time created
-	rows, err := Db.Query("select t.id, t.user_id, msg, t.created_at, count(*) from user_follows f left join tweets t on f.follower_id = $1 and f.following_id = t.user_id or t.user_id = $1 group by t.id order by t.created_at desc", user_id)
+	rows, err := Db.Query("select distinct (t.id), t.user_id, u.name, u.username, t.msg, t.created_at from tweets t inner join users u on t.user_id = u.id inner join user_follows f on t.user_id = f.following_id where f.follower_id = $1 or t.user_id = $1 order by t.created_at desc", user_id)
+	// old sql statement: select t.id, t.user_id, msg, t.created_at, count(*) from user_follows f left join tweets t on f.follower_id = $1 and f.following_id = t.user_id or t.user_id = $1 group by t.id order by t.created_at desc
 
 	if err != nil {
 		log.Fatal(err)
@@ -103,10 +106,9 @@ func getTweets(user_id string) (bool, []Tweet) {
 	defer rows.Close()
 
 	for rows.Next() {
-		tweet := Tweet{}
-		var throwaway int
+		tweet := metaTweet{}
 
-		err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Message, &tweet.Created_at, &throwaway)
+		err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Name, &tweet.Username, &tweet.Message, &tweet.Created_at)
 
 		switch {
 		case err == sql.ErrNoRows:
