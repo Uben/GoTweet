@@ -1,7 +1,7 @@
 package main
 
 import (
-	// "database/sql"
+	"database/sql"
 	"fmt"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
@@ -25,8 +25,8 @@ type User struct {
 type User_meta struct {
 	Id          int
 	User_id     int
-	Description string
-	Url         string
+	Description sql.NullString
+	Url         sql.NullString
 	Created_at  time.Time
 	Updated_at  time.Time
 }
@@ -49,6 +49,7 @@ func user_register(res http.ResponseWriter, req *http.Request) {
 func register(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
 
+	var nil_check string
 	var user_id int
 	req.ParseForm()
 	name := req.PostFormValue("name")
@@ -57,30 +58,38 @@ func register(res http.ResponseWriter, req *http.Request) {
 	password := req.PostFormValue("password")
 	confirm_password := req.PostFormValue("confirm_password")
 
-	// if 'password' && 'confirm_password' have the same value
-	if password == confirm_password {
-		// Generate a hash from the submitted password with a cost of 10
-		hashPass, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	// if any of the submitted values weren't set, skip registering the user
+	if (name != nil_check) && (email != nil_check) && (username != nil_check) && (password != nil_check) && (confirm_password != nil_check) {
 
-		if err != nil {
-			panic(err)
-		}
-
-		// Get the current time
-		currentTime := time.Now()
-		// insert the user into the users table in postgres
-		nErr := Db.QueryRow("insert into users (name, email, username, password, created_at, updated_at) values ($1, $2, $3, $4, $5, $5) returning id", name, email, username, hashPass, currentTime).Scan(&user_id)
-
-		// Check of there is an error connecting to the database
-		if nErr == nil {
-			_, err = Db.Exec("insert into user_meta (user_id, created_at, updated_at) values ($1, $2, $2)", user_id, currentTime)
+		// if 'password' && 'confirm_password' have the same value
+		if password == confirm_password {
+			// Generate a hash from the submitted password with a cost of 10
+			hashPass, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 
 			if err != nil {
+				panic(err)
+			}
+
+			// Get the current time
+			currentTime := time.Now()
+			// insert the user into the users table in postgres
+			nErr := Db.QueryRow("insert into users (name, email, username, password, created_at, updated_at) values ($1, $2, $3, $4, $5, $5) returning id", name, email, username, hashPass, currentTime).Scan(&user_id)
+
+			// Check of there is an error connecting to the database
+			if nErr == nil {
+				_, err = Db.Exec("insert into user_meta (user_id, created_at, updated_at) values ($1, $2, $2)", user_id, currentTime)
+
+				if err != nil {
+					panic(err)
+				}
+			} else {
 				panic(nErr)
 			}
-		} else {
-			panic(nErr)
+
 		}
+
+	} else {
+		fmt.Printf("\nnil values were found. User NOT created.\n")
 	}
 
 	fmt.Printf("\nRedirecting to the '/' path\n")
@@ -118,8 +127,8 @@ func update_user(res http.ResponseWriter, req *http.Request) {
 		"Name":           retUser.Name,
 		"Email":          retUser.Email,
 		"Username":       retUser.Username,
-		"Description":    retMeta.Description,
-		"Url":            retMeta.Url,
+		"Description":    retMeta.Description.String,
+		"Url":            retMeta.Url.String,
 		"isUserLoggedIn": is_user_logged_in(req),
 	}
 
@@ -130,20 +139,29 @@ func update_user(res http.ResponseWriter, req *http.Request) {
 func change_user_info(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
 
+	var nil_check string
 	req.ParseForm()
 	name := req.PostFormValue("name")
 	email := req.PostFormValue("email")
 	username := req.PostFormValue("username")
 
-	user_id, err := req.Cookie("session_uid")
+	// if any of the submitted values weren't set, skip registering the user
+	if (name != nil_check) && (email != nil_check) && (username != nil_check) {
 
-	// Get the current time
-	currentTime := time.Now()
-	// update the users table in postgress
-	_, err = Db.Exec("update users set name = $2, email = $3, username = $4, updated_at = $5 where id = $1", user_id.Value, name, email, username, currentTime)
+		user_id, err := req.Cookie("session_uid")
 
-	if err != nil {
-		panic(err)
+		// Get the current time
+		currentTime := time.Now()
+		// update the users table in postgress
+		_, err = Db.Exec("update users set name = $2, email = $3, username = $4, updated_at = $5 where id = $1", user_id.Value, name, email, username, currentTime)
+
+		if err != nil {
+			panic(err)
+		}
+
+	} else {
+
+		fmt.Printf("\nNIL values were found. User NOT updated.\n")
 	}
 
 	fmt.Printf("\nRedirecting to the '/' path\n")
@@ -180,6 +198,7 @@ func change_user_meta(res http.ResponseWriter, req *http.Request) {
 func change_user_password(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
 
+	var nil_check string
 	req.ParseForm()
 	old_password := req.PostFormValue("old-password")
 	new_password := req.PostFormValue("new-password")
@@ -188,35 +207,41 @@ func change_user_password(res http.ResponseWriter, req *http.Request) {
 
 	user_id, err := req.Cookie("session_uid")
 
-	err = Db.QueryRow("select id, password from users where id = $1;", user_id.Value).Scan(&retUser.Id, &retUser.Hash)
+	if (old_password != nil_check) && (new_password != nil_check) && (confirm_new_password != nil_check) {
 
-	if err != nil {
-		panic(err)
-	}
-
-	// Compare the user hash and old_password
-	pwd_match := bcrypt.CompareHashAndPassword([]byte(retUser.Hash), []byte(old_password))
-
-	// if ('pwd_match' doesnt have an error) and ('new_password' && 'confirm_password' have the same value)
-	if (pwd_match == nil) && (new_password == confirm_new_password) {
-		// Generate a hash from the submitted password with a cost of 10
-		hashPass, err := bcrypt.GenerateFromPassword([]byte(new_password), 10)
+		err = Db.QueryRow("select id, password from users where id = $1;", user_id.Value).Scan(&retUser.Id, &retUser.Hash)
 
 		if err != nil {
 			panic(err)
 		}
 
-		// Get the current time
-		currentTime := time.Now()
-		// update the user into the users table in postgres
-		_, err = Db.Exec("update users set password = $2, updated_at = $3 where id = $1", user_id.Value, hashPass, currentTime)
+		// Compare the user hash and old_password
+		pwd_match := bcrypt.CompareHashAndPassword([]byte(retUser.Hash), []byte(old_password))
 
-		// Check of there is an error connecting to the database
-		if err != nil {
-			panic(err)
+		// if ('pwd_match' doesnt have an error) and ('new_password' && 'confirm_password' have the same value)
+		if (pwd_match == nil) && (new_password == confirm_new_password) {
+			// Generate a hash from the submitted password with a cost of 10
+			hashPass, err := bcrypt.GenerateFromPassword([]byte(new_password), 10)
+
+			if err != nil {
+				panic(err)
+			}
+
+			// Get the current time
+			currentTime := time.Now()
+			// update the user into the users table in postgres
+			_, err = Db.Exec("update users set password = $2, updated_at = $3 where id = $1", user_id.Value, hashPass, currentTime)
+
+			// Check of there is an error connecting to the database
+			if err != nil {
+				panic(err)
+			}
+		} else {
+			fmt.Printf("Passwords dont match in '/change_user_passwords'")
 		}
 	} else {
-		fmt.Printf("Passwords dont match in '/change_user_passwords'")
+
+		fmt.Printf("\nNIL values were found. User NOT updated.\n")
 	}
 
 	fmt.Printf("\nRedirecting to the '/settings' path\n")
@@ -243,6 +268,13 @@ func delete_user(res http.ResponseWriter, req *http.Request) {
 
 	if pwd_match == nil {
 		_, err := Db.Exec("delete from users where id = $1", retUser.Id)
+
+		if err != nil {
+			fmt.Println("Something went wrong. The user failed to be deleted:\n")
+			fmt.Println(err)
+		}
+
+		_, err = Db.Exec("delete from user_meta where user_id = $1", retUser.Id)
 
 		if err != nil {
 			fmt.Println("Something went wrong. The user failed to be deleted:\n")
@@ -281,8 +313,8 @@ func show_user_profile(res http.ResponseWriter, req *http.Request) {
 		"Name":           retUser.Name,
 		"Email":          retUser.Email,
 		"Username":       retUser.Username,
-		"Description":    retMeta.Description,
-		"Url":            retMeta.Url,
+		"Description":    retMeta.Description.String,
+		"Url":            retMeta.Url.String,
 		"Tweets":         getUserTweets(user_id),
 		"isUserLoggedIn": is_user_logged_in(req),
 	}
