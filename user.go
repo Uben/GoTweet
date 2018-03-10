@@ -117,8 +117,15 @@ func update_user(res http.ResponseWriter, req *http.Request) {
 
 	err = Db.QueryRow("select description, url from user_meta where user_id = $1", user_id.Value).Scan(&retMeta.Description, &retMeta.Url)
 
-	if err != nil {
-		panic(err)
+	switch {
+	case err == sql.ErrNoRows:
+		log.Printf("\nNo usermeta found.\n")
+
+	case err != nil:
+		log.Fatal(err)
+
+	default:
+		fmt.Printf("\nFound %s's meta info.", retUser.Name)
 	}
 
 	// Create map to pass data to template
@@ -294,11 +301,17 @@ func show_user_profile(res http.ResponseWriter, req *http.Request) {
 	url_params := mux.Vars(req)
 	user_id := url_params["user_id"]
 
+	user_logged_id, err := req.Cookie("session_uid")
+
+	if err != nil {
+		panic(err)
+	}
+
 	pageData := map[string]interface{}{
 		"Title": "User Profile",
 	}
 
-	err := Db.QueryRow("select id, name, email, username, password, created_at, updated_at from users where id = $1", user_id).Scan(&retUser.Id, &retUser.Name, &retUser.Email, &retUser.Username, &retUser.Hash, &retUser.Created_at, &retUser.Updated_at)
+	err = Db.QueryRow("select id, name, email, username, password, created_at, updated_at from users where id = $1", user_id).Scan(&retUser.Id, &retUser.Name, &retUser.Email, &retUser.Username, &retUser.Hash, &retUser.Created_at, &retUser.Updated_at)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -318,8 +331,8 @@ func show_user_profile(res http.ResponseWriter, req *http.Request) {
 		pageData = map[string]interface{}{
 			"isUserValid":    true,
 			"Title":          retUser.Username + " | Profile",
-			"LoggedInUID":    string(user_id),
-			"ProfileUID":     string(retUser.Id),
+			"LoggedInUID":    string(user_logged_id.Value),
+			"ProfileUID":     string(user_id),
 			"Name":           retUser.Name,
 			"Email":          retUser.Email,
 			"Username":       retUser.Username,
@@ -362,14 +375,15 @@ func show_user_profile(res http.ResponseWriter, req *http.Request) {
 	tpl.ExecuteTemplate(res, "profile.html", pageData)
 }
 
-func getUserTweets(user_id string) (bool, []Tweet) {
+func getUserTweets(user_id string) (bool, []metaTweet) {
 	fmt.Printf("\nGetting Tweets :o\n")
 
 	var foundTweets = true
-	var tweets []Tweet
+	var tweets []metaTweet
 
 	// get user follow relations and use that to find all the tweets of the users the current logged in user follows, use 'group by' and 'count(*)' to do duplicate checking, and then order by the time created
-	rows, err := Db.Query("select id, user_id, msg, created_at from tweets where user_id = $1 order by created_at desc limit 15", user_id)
+	rows, err := Db.Query("select distinct (t.id), t.user_id, u.name, u.username, t.msg, t.created_at from tweets t inner join users u on t.user_id = u.id where t.user_id = $1 order by t.created_at desc", user_id)
+	// select id, user_id, msg, created_at from tweets where user_id = $1 order by created_at desc limit 15
 
 	if err != nil {
 		log.Fatal(err)
@@ -378,9 +392,9 @@ func getUserTweets(user_id string) (bool, []Tweet) {
 	defer rows.Close()
 
 	for rows.Next() {
-		tweet := Tweet{}
+		tweet := metaTweet{}
 
-		err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Message, &tweet.Created_at)
+		err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Name, &tweet.Username, &tweet.Message, &tweet.Created_at)
 
 		switch {
 		case err == sql.ErrNoRows:
