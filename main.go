@@ -69,58 +69,62 @@ func home(res http.ResponseWriter, req *http.Request) {
 
 	user_id, err := req.Cookie("session_uid")
 
-	if err == nil && is_user_logged_in(req) {
+	if err == nil {
 		pageData["isUserLoggedIn"] = true
-		pageData["Tweets"] = getTweets(user_id.Value)
+
+		if foundTweets, userTweets := getUserTweets(user_id.Value); foundTweets == true {
+			pageData["foundTweets"] = true
+			pageData["Tweets"] = userTweets
+		} else {
+			pageData["foundTweets"] = false
+		}
+
 	} else {
 		pageData["isUserLoggedIn"] = false
 	}
 
 	fmt.Println(pageData)
-
-	// Check if the path is exactly "/" else its a 404 error
-	if req.URL.Path != "/" {
-		pageData["Title"] = "404 | NOT FOUND"
-		tpl.ExecuteTemplate(res, "404.html", pageData)
-
-		// Else Execute the index template with the 'pageData' data
-	} else {
-		tpl.ExecuteTemplate(res, "index.html", pageData)
-	}
+	tpl.ExecuteTemplate(res, "index.html", pageData)
 }
 
-func getTweets(user_id string) []Tweet {
+func getTweets(user_id string) (bool, []Tweet) {
 	fmt.Printf("\nGetting Tweets :o\n")
 
+	var foundTweets = true
 	var tweets []Tweet
 
 	// get user follow relations and use that to find all the tweets of the users the current logged in user follows, use 'group by' and 'count(*)' to do duplicate checking, and then order by the time created
 	rows, err := Db.Query("select t.id, t.user_id, msg, t.created_at, count(*) from user_follows f left join tweets t on f.follower_id = $1 and f.following_id = t.user_id or t.user_id = $1 group by t.id order by t.created_at desc", user_id)
 
-	if err == sql.ErrNoRows {
-		rows.Close()
-
-	} else if err != nil {
+	if err != nil {
 		log.Fatal(err)
+	}
 
-	} else {
-		defer rows.Close()
+	defer rows.Close()
 
-		for rows.Next() {
-			tweet := Tweet{}
-			var throwaway int
+	for rows.Next() {
+		tweet := Tweet{}
+		var throwaway int
 
-			if err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Message, &tweet.Created_at, &throwaway); err != nil {
-				log.Fatal(err)
-			}
+		err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Message, &tweet.Created_at, &throwaway)
 
-			tweets = append(tweets, tweet)
-		}
+		switch {
+		case err == sql.ErrNoRows:
+			foundTweets = false
+			log.Printf("\nNo tweets found.\n")
 
-		if err := rows.Err(); err != nil {
+			return foundTweets, tweets
+		case err != nil:
 			log.Fatal(err)
+		default:
+			fmt.Printf("\nAdded a tweet.")
+			tweets = append(tweets, tweet)
 		}
 	}
 
-	return tweets
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	return foundTweets, tweets
 }

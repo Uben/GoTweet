@@ -18,17 +18,20 @@
 	{{ end }}
 
 	{{ if .isUserLoggedIn }}
-		<div style="display: flex; flex-flow: column; align-items: flex-start;">
-				
-			{{ range $idx, $tweet := .Tweets }}
-				<div style="display: inline-block; margin: 0 0 5px 0;">
-					<p> User ID: {{ $tweet.Id }} </p>
-					<p> {{ $tweet.Message }} </p>
-					<p> {{ $tweet.Created_at }} </p>
-				</div>
-			{{ end }}
-
-		</div>
+		{{ if .foundTweets }}
+			<div style="display: flex; flex-flow: column; align-items: flex-start;">
+					
+				{{ range $idx, $tweet := .Tweets }}
+					<div style="display: inline-block; margin: 0 0 5px 0;">
+						{{ if .Message.Valid }}
+							<p> User ID: {{ $tweet.Id }} </p>
+							<p> {{ $tweet.Message.String }} </p>
+							<p> {{ $tweet.Created_at }} </p>
+						{{ end }}
+					</div>
+				{{ end }}
+			</div>
+		{{ end }}
 	{{ end }}
 
 {{ template "footer" . }}

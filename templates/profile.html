@@ -1,38 +1,47 @@
 {{ template "header" . }}
+	{{ if .isUserValid }}
+		<h1> {{ .Name }} </h1>
+		<p>
+			<span> @{{ .Username }} </span> </br>
+			{{ if .isUserLoggedIn }}
+				<a href="/follow-user/{{ .ProfileUID }}"> Follow @{{ .Username }} </a> <br>
+			{{ end }}
 
-	<h1> {{ .Name }} </h1>
-	<p>
-		<span> @{{ .Username }} </span> </br>
-		{{ if .isUserLoggedIn }}
-			<a href="/follow-user/{{ .ProfileUID }}"> Follow @{{ .Username }} </a> <br>
-		{{ end }}
+			{{ if .UrlSet }}
+				<a href="{{ .Url }}"> {{ .Url }} </a> </br>
+			{{ end }}
 
-		{{ if .UrlSet }}
-			<a href="{{ .Url }}"> {{ .Url }} </a> </br>
-		{{ end }}
+			{{ if .DescriptionSet }}
+				<span> {{ .Description }} </span> </br>
+			{{ end}}
+		</p>
 
-		{{ if .DescriptionSet }}
-			<span> {{ .Description }} </span> </br>
-		{{ end}}
-	</p>
+		<h3> {{ .Username }}s Tweets </h3>
 
-	<h3> {{ .Username }}s Tweets </h3>
-
-	<div style="display: flex; flex-flow: column; align-items: flex-start;">
-		{{ if .foundTweets }}
-			{{ range $idx, $tweet := .Tweets }}
-				<div style="display: inline-block; margin: 0 0 5px 0;">
-					<p> Tweet ID: {{ $tweet.Id }} </p>
-					<p> {{ $tweet.Message }} </p>
-					<p> {{ $tweet.Created_at }} </p>
+		<div style="display: flex; flex-flow: column; align-items: flex-start;">
+			{{ if .foundTweets }}
+				{{ range $idx, $tweet := .Tweets }}
+					<div style="display: inline-block; margin: 0 0 5px 0;">
+						<p> Tweet ID: {{ $tweet.Id }} </p>
+						<p> {{ $tweet.Message }} </p>
+						<p> {{ $tweet.Created_at }} </p>
+					</div>
+				{{ end }}
+			{{ else }}
+				<div>
+					<h3> {{ .Username }} hasn't tweeted yet D: </h3>
 				</div>
 			{{ end }}
-		{{ else }}
-			<div>
-				<h3> {{ .Username }} hasn't tweeted yet D: </h3>
-			</div>
-		{{ end }}
 
-	</div>
+		</div>
+
+
+	{{ else }}
+
+		<div>
+			<h3> Sorry, this person doesn't exist. </h3>
+		</div>
+
+	{{ end }}
 
 {{ template "footer" . }}

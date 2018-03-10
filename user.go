@@ -294,57 +294,69 @@ func show_user_profile(res http.ResponseWriter, req *http.Request) {
 	url_params := mux.Vars(req)
 	user_id := url_params["user_id"]
 
+	pageData := map[string]interface{}{
+		"Title": "User Profile",
+	}
+
 	err := Db.QueryRow("select id, name, email, username, password, created_at, updated_at from users where id = $1", user_id).Scan(&retUser.Id, &retUser.Name, &retUser.Email, &retUser.Username, &retUser.Hash, &retUser.Created_at, &retUser.Updated_at)
 
 	switch {
 	case err == sql.ErrNoRows:
 		log.Printf("No User record found")
+
+		pageData = map[string]interface{}{
+			"isUserValid":    false,
+			"isUserLoggedIn": is_user_logged_in(req),
+			"Title":          "User Not Found",
+		}
 	case err != nil:
 		log.Fatal(err)
+
 	default:
 		fmt.Printf("\nFound %s's info.\n", retUser.Name)
-	}
 
-	pageData := map[string]interface{}{
-		"LoggedInUID":    string(user_id),
-		"ProfileUID":     string(retUser.Id),
-		"Title":          retUser.Username + " | Profile",
-		"Name":           retUser.Name,
-		"Email":          retUser.Email,
-		"Username":       retUser.Username,
-		"isUserLoggedIn": is_user_logged_in(req),
-	}
+		pageData = map[string]interface{}{
+			"isUserValid":    true,
+			"Title":          retUser.Username + " | Profile",
+			"LoggedInUID":    string(user_id),
+			"ProfileUID":     string(retUser.Id),
+			"Name":           retUser.Name,
+			"Email":          retUser.Email,
+			"Username":       retUser.Username,
+			"isUserLoggedIn": is_user_logged_in(req),
+		}
 
-	err = Db.QueryRow("select description, url from user_meta where user_id = $1", user_id).Scan(&retMeta.Description, &retMeta.Url)
+		err = Db.QueryRow("select description, url from user_meta where user_id = $1", user_id).Scan(&retMeta.Description, &retMeta.Url)
 
-	switch {
-	case err == sql.ErrNoRows:
-		log.Printf("\nNo User meta record found\n")
-	case err != nil:
-		log.Fatal(err)
-	default:
-		fmt.Printf("\nFound %s's meta info.\n", retUser.Name)
-	}
+		switch {
+		case err == sql.ErrNoRows:
+			log.Printf("\nNo User meta record found\n")
+		case err != nil:
+			log.Fatal(err)
+		default:
+			fmt.Printf("\nFound %s's meta info.\n", retUser.Name)
+		}
 
-	if foundTweets, userTweets := getUserTweets(user_id); foundTweets == true {
-		pageData["foundTweets"] = true
-		pageData["Tweets"] = userTweets
-	} else {
-		pageData["foundTweets"] = false
-	}
+		if foundTweets, userTweets := getUserTweets(user_id); foundTweets == true {
+			pageData["foundTweets"] = true
+			pageData["Tweets"] = userTweets
+		} else {
+			pageData["foundTweets"] = false
+		}
 
-	if retMeta.Url.Valid == true {
-		pageData["UrlSet"] = true
-		pageData["Url"] = retMeta.Url.String
-	} else {
-		pageData["UrlSet"] = false
-	}
+		if retMeta.Url.Valid == true {
+			pageData["UrlSet"] = true
+			pageData["Url"] = retMeta.Url.String
+		} else {
+			pageData["UrlSet"] = false
+		}
 
-	if retMeta.Description.Valid == true {
-		pageData["DescriptionSet"] = true
-		pageData["Description"] = retMeta.Url.String
-	} else {
-		pageData["DescriptionSet"] = false
+		if retMeta.Description.Valid == true {
+			pageData["DescriptionSet"] = true
+			pageData["Description"] = retMeta.Url.String
+		} else {
+			pageData["DescriptionSet"] = false
+		}
 	}
 
 	tpl.ExecuteTemplate(res, "profile.html", pageData)
