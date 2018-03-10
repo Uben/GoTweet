@@ -25,8 +25,9 @@ func user_login(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\nUser accessed the '%s' url path.\n", req.URL.Path)
 
 	// Create map to pass data to template
-	pageData := map[string]string{
-		"title": "Login",
+	pageData := map[string]interface{}{
+		"Title":          "Login",
+		"isUserLoggedIn": false,
 	}
 
 	// Execute the template

@@ -1,75 +1,68 @@
-<!DOCTYPE html>
-<html>
+{{ template "header" . }}
 
-	<head>
-		<title> {{.Title}} </title>
-	</head>
+	<h3> Update Account Information </h3>
+	<form action="/update-user-info" method="post">
+		<label for="">Name</label>
+		<input type="text" name="name" value="{{ .Name }}" id="form_name">
 
-	<body>
-		<h3> Update Account Information </h3>
-		<form action="/update-user-info" method="post">
-			<label for="">Name</label>
-			<input type="text" name="name" value="{{ .Name }}" id="form_name">
+		<label for="">Email</label>
+		<input type="email" name="email" value="{{ .Email }}" id="form_email">
 
-			<label for="">Email</label>
-			<input type="email" name="email" value="{{ .Email }}" id="form_email">
+		<label for="">Username</label>
+		<input type="text" name="username" value="{{ .Username }}" id="form_username">
+		
+		<button>Submit</button>
+	</form>
 
-			<label for="">Username</label>
-			<input type="text" name="username" value="{{ .Username }}" id="form_username">
-			
-			<button>Submit</button>
-		</form>
+	<br>
+	<br>	
+	<hr>
+	<br>
+	<br>
 
-		<br>
-		<br>	
-		<hr>
-		<br>
-		<br>
+	<h3> Update Account Details </h3>
+	<form action="/update-user-meta" method="post">
+		<label for="">Biography</label>
+		<input type="text" name="bio" value="{{ .Description }}" id="form_bio">
 
-		<h3> Update Account Details </h3>
-		<form action="/update-user-meta" method="post">
-			<label for="">Biography</label>
-			<input type="text" name="bio" value="{{ .Description }}" id="form_bio">
+		<label for="">Url</label>
+		<input type="text" name="url" value="{{ .Url }}" id="form_url">
+		
+		<button>Submit</button>
+	</form>
 
-			<label for="">Url</label>
-			<input type="text" name="url" value="{{ .Url }}" id="form_url">
-			
-			<button>Submit</button>
-		</form>
+	<br>
+	<br>	
+	<hr>
+	<br>
+	<br>
 
-		<br>
-		<br>	
-		<hr>
-		<br>
-		<br>
+	<h3> Change Password </h3>
+	<form action="/update-user-password" method="post">
+		<label for="">Current Password</label>
+		<input type="password" name="old-password" id="form_old_password">
 
-		<h3> Change Password </h3>
-		<form action="/update-user-password" method="post">
-			<label for="">Current Password</label>
-			<input type="password" name="old-password" id="form_old_password">
+		<label for="">New Password</label>
+		<input type="password" name="new-password" id="form_new_password">
+		
+		<label for="">Confirm New Password</label>
+		<input type="password" name="confirm-new-password" id="form_confirm_new_password">
 
-			<label for="">New Password</label>
-			<input type="password" name="new-password" id="form_new_password">
-			
-			<label for="">Confirm New Password</label>
-			<input type="password" name="confirm-new-password" id="form_confirm_new_password">
+		<button>Submit</button>
+	</form>
 
-			<button>Submit</button>
-		</form>
+	<br>
+	<br>	
+	<hr>
+	<br>
+	<br>
 
-		<br>
-		<br>	
-		<hr>
-		<br>
-		<br>
+	<h3> Delete Account </h3>
+	<form action="/delete_user" method="post">
+		<label for="">Password</label>
+		<input type="password" name="password" id="form_old_password">
 
-		<h3> Delete Account </h3>
-		<form action="/delete_user" method="post">
-			<label for="">Password</label>
-			<input type="password" name="password" id="form_old_password">
+		<button> Delete My Account </button>
+	</form>
 
-			<button> Delete My Account </button>
-		</form>
-			
-	</body>
-</html>
+{{ template "footer" . }}

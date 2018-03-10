@@ -1,18 +1,5 @@
 {{ template "header" . }}
 
-	{{ if .isUserLoggedIn }}
-		<div>
-			<a href="/settings">Settings</a>
-			<a href="/logout">Logout</a>
-		</div>
-		<p> You are logged in. </p>
-	{{ else }}
-		<div>
-			<a href="/register">Sign Up</a>
-			<a href="/login">Login</a>
-		</div>
-	{{ end }}
-
 	<h1> {{ .Name }} </h1>
 	<p>
 		<span> @{{ .Username }} </span> </br>

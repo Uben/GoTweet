@@ -5,21 +5,11 @@
 			margin: 5px 0 10px;
 		}
 	</style>
-		
-	{{ if eq .isUserLoggedIn "true" }}
-		<p> <a href="/settings">Settings</a> <a href="/logout">Logout</a> </p>
-		<p> You are logged in. </p>
-	{{ else }}
-		<div>
-			<a href="/register">Sign Up</a>
-			<a href="/login">Login</a>
-		</div>
-	{{ end }}
 
 	<h1> {{.BodyHeader}} </h1>
 	<p> {{.Paragraph}} </p>
 
-	{{ if eq .isUserLoggedIn "true" }}
+	{{ if .isUserLoggedIn }}
 		<h3> Tweet </h3>
 		<form action="/create-tweet" method="post">
 			<input type="textarea" name="tweet" placeholder="What are you thinking about?" id="form_tweet">
@@ -27,7 +17,7 @@
 		</form>
 	{{ end }}
 
-	{{ if eq .isUserLoggedIn "true" }}
+	{{ if .isUserLoggedIn }}
 		<div style="display: flex; flex-flow: column; align-items: flex-start;">
 				
 			{{ range $idx, $tweet := .Tweets }}

@@ -36,8 +36,9 @@ func user_register(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\nUser accessed the '%s' url path.\n", req.URL.Path)
 
 	// Create map to pass data to template
-	pageData := map[string]string{
-		"Title": "Sign Up",
+	pageData := map[string]interface{}{
+		"Title":          "Sign Up",
+		"isUserLoggedIn": false,
 	}
 
 	// Execute the template
@@ -112,19 +113,14 @@ func update_user(res http.ResponseWriter, req *http.Request) {
 	}
 
 	// Create map to pass data to template
-	pageData := map[string]string{
-		"Title":       "Settings",
-		"Name":        retUser.Name,
-		"Email":       retUser.Email,
-		"Username":    retUser.Username,
-		"Description": retMeta.Description,
-		"Url":         retMeta.Url,
-	}
-
-	if is_user_logged_in(req) {
-		pageData["isUserLoggedIn"] = "true"
-	} else {
-		pageData["isUserLoggedIn"] = "false"
+	pageData := map[string]interface{}{
+		"Title":          "Settings",
+		"Name":           retUser.Name,
+		"Email":          retUser.Email,
+		"Username":       retUser.Username,
+		"Description":    retMeta.Description,
+		"Url":            retMeta.Url,
+		"isUserLoggedIn": is_user_logged_in(req),
 	}
 
 	tpl.ExecuteTemplate(res, "user_settings.html", pageData)
@@ -279,21 +275,16 @@ func show_user_profile(res http.ResponseWriter, req *http.Request) {
 	}
 
 	pageData := map[string]interface{}{
-		"LoggedInUID": string(user_id),
-		"ProfileUID":  string(retUser.Id),
-		"Title":       retUser.Username + " | Profile",
-		"Name":        retUser.Name,
-		"Email":       retUser.Email,
-		"Username":    retUser.Username,
-		"Description": retMeta.Description,
-		"Url":         retMeta.Url,
-		"Tweets":      getUserTweets(user_id),
-	}
-
-	if err == nil && is_user_logged_in(req) {
-		pageData["isUserLoggedIn"] = true
-	} else {
-		pageData["isUserLoggedIn"] = false
+		"LoggedInUID":    string(user_id),
+		"ProfileUID":     string(retUser.Id),
+		"Title":          retUser.Username + " | Profile",
+		"Name":           retUser.Name,
+		"Email":          retUser.Email,
+		"Username":       retUser.Username,
+		"Description":    retMeta.Description,
+		"Url":            retMeta.Url,
+		"Tweets":         getUserTweets(user_id),
+		"isUserLoggedIn": is_user_logged_in(req),
 	}
 
 	tpl.ExecuteTemplate(res, "profile.html", pageData)

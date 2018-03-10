@@ -62,7 +62,7 @@ func home(res http.ResponseWriter, req *http.Request) {
 
 	// Create map to pass data to template
 	pageData := map[string]interface{}{
-		"Title":      "Home | Base Golang Web App",
+		"Title":      "Home",
 		"BodyHeader": "Welcome to the Starting Block",
 		"Paragraph":  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.",
 	}
@@ -70,16 +70,17 @@ func home(res http.ResponseWriter, req *http.Request) {
 	user_id, err := req.Cookie("session_uid")
 
 	if err == nil && is_user_logged_in(req) {
-		pageData["isUserLoggedIn"] = "true"
+		pageData["isUserLoggedIn"] = true
 		pageData["Tweets"] = getTweets(user_id.Value)
 	} else {
-		pageData["isUserLoggedIn"] = "false"
+		pageData["isUserLoggedIn"] = false
 	}
 
 	fmt.Println(pageData)
 
 	// Check if the path is exactly "/" else its a 404 error
 	if req.URL.Path != "/" {
+		pageData["Title"] = "404 | NOT FOUND"
 		tpl.ExecuteTemplate(res, "404.html", pageData)
 
 		// Else Execute the index template with the 'pageData' data
@@ -110,14 +111,14 @@ func getTweets(user_id string) []Tweet {
 			var throwaway int
 
 			if err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Message, &tweet.Created_at, &throwaway); err != nil {
-				// log.Fatal(err)
+				log.Fatal(err)
 			}
 
 			tweets = append(tweets, tweet)
 		}
 
 		if err := rows.Err(); err != nil {
-			// log.Fatal(err)
+			log.Fatal(err)
 		}
 	}
 

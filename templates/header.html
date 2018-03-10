@@ -21,6 +21,20 @@
 	</style>
 
 	<body>
+		{{ if .isUserLoggedIn }}
+			<p> 
+				<a href="/">Home</a>
+				<a href="/settings">Settings</a>
+				<a href="/logout">Logout</a>
+			</p>
+			<p> You are logged in. </p>
+		{{ else }}
+			<div>
+				<a href="/">Home</a>
+				<a href="/register">Sign Up</a>
+				<a href="/login">Login</a>
+			</div>
+		{{ end }}
 
 
 {{ end }}
