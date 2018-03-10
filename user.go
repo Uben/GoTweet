@@ -296,14 +296,13 @@ func show_user_profile(res http.ResponseWriter, req *http.Request) {
 
 	err := Db.QueryRow("select id, name, email, username, password, created_at, updated_at from users where id = $1", user_id).Scan(&retUser.Id, &retUser.Name, &retUser.Email, &retUser.Username, &retUser.Hash, &retUser.Created_at, &retUser.Updated_at)
 
-	if err != nil {
-		panic(err)
-	}
-
-	err = Db.QueryRow("select description, url from user_meta where user_id = $1", user_id).Scan(&retMeta.Description, &retMeta.Url)
-
-	if err != nil {
-		panic(err)
+	switch {
+	case err == sql.ErrNoRows:
+		log.Printf("No User record found")
+	case err != nil:
+		log.Fatal(err)
+	default:
+		fmt.Printf("\nFound %s's info.\n", retUser.Name)
 	}
 
 	pageData := map[string]interface{}{
@@ -313,25 +312,55 @@ func show_user_profile(res http.ResponseWriter, req *http.Request) {
 		"Name":           retUser.Name,
 		"Email":          retUser.Email,
 		"Username":       retUser.Username,
-		"Description":    retMeta.Description.String,
-		"Url":            retMeta.Url.String,
-		"Tweets":         getUserTweets(user_id),
 		"isUserLoggedIn": is_user_logged_in(req),
+	}
+
+	err = Db.QueryRow("select description, url from user_meta where user_id = $1", user_id).Scan(&retMeta.Description, &retMeta.Url)
+
+	switch {
+	case err == sql.ErrNoRows:
+		log.Printf("\nNo User meta record found\n")
+	case err != nil:
+		log.Fatal(err)
+	default:
+		fmt.Printf("\nFound %s's meta info.\n", retUser.Name)
+	}
+
+	if foundTweets, userTweets := getUserTweets(user_id); foundTweets == true {
+		pageData["foundTweets"] = true
+		pageData["Tweets"] = userTweets
+	} else {
+		pageData["foundTweets"] = false
+	}
+
+	if retMeta.Url.Valid == true {
+		pageData["UrlSet"] = true
+		pageData["Url"] = retMeta.Url.String
+	} else {
+		pageData["UrlSet"] = false
+	}
+
+	if retMeta.Description.Valid == true {
+		pageData["DescriptionSet"] = true
+		pageData["Description"] = retMeta.Url.String
+	} else {
+		pageData["DescriptionSet"] = false
 	}
 
 	tpl.ExecuteTemplate(res, "profile.html", pageData)
 }
 
-func getUserTweets(user_id string) []Tweet {
+func getUserTweets(user_id string) (bool, []Tweet) {
 	fmt.Printf("\nGetting Tweets :o\n")
 
+	var foundTweets = true
 	var tweets []Tweet
 
 	// get user follow relations and use that to find all the tweets of the users the current logged in user follows, use 'group by' and 'count(*)' to do duplicate checking, and then order by the time created
 	rows, err := Db.Query("select id, user_id, msg, created_at from tweets where user_id = $1 order by created_at desc limit 15", user_id)
 
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	defer rows.Close()
@@ -339,16 +368,23 @@ func getUserTweets(user_id string) []Tweet {
 	for rows.Next() {
 		tweet := Tweet{}
 
-		if err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Message, &tweet.Created_at); err != nil {
-			log.Fatal(err)
-		}
+		err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Message, &tweet.Created_at)
 
-		tweets = append(tweets, tweet)
+		switch {
+		case err == sql.ErrNoRows:
+			foundTweets = false
+			log.Printf("No user with that ID.")
+		case err != nil:
+			log.Fatal(err)
+		default:
+			fmt.Printf("\nAdded a tweet.")
+			tweets = append(tweets, tweet)
+		}
 	}
 
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
 	}
 
-	return tweets
+	return foundTweets, tweets
 }

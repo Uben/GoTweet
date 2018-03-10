@@ -211,7 +211,6 @@ func is_user_logged_in(r *http.Request) bool {
 
 		// If there is no error getting the data && Check if the value of 'uuid' in the found document is equal to the 'Value' in 'session_cookie'
 		if (err == nil) && (retSession.Token == session_cookie.Value) {
-			fmt.Println("\nSession: ", retSession)
 			fmt.Printf("\nUser is logged in with session: '%s'.", session_cookie.Value)
 			return true
 		} else {
