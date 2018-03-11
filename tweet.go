@@ -25,6 +25,14 @@ type metaTweet struct {
 	Created_at time.Time
 }
 
+type Favorite struct {
+	Id         int
+	User_id    int
+	Tweet_id   int
+	Created_at time.Time
+	Updated_at time.Time
+}
+
 func tweet_create(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
 
@@ -74,3 +82,62 @@ func tweet_delete(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\nRedirecting to the '/' path\n")
 	http.Redirect(res, req, "/", 302)
 }
+
+func favorite_tweet(res http.ResponseWriter, req *http.Request) {
+	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
+
+	url_params := mux.Vars(req)
+	tweet_id := url_params["tweet_id"]
+	currentTime := time.Now()
+
+	user_id, err := req.Cookie("session_uid")
+
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = Db.Exec("insert into favorites (user_id, tweet_id, created_at, updated_at) values ($1, $2, $3, $3)", user_id.Value, tweet_id, currentTime)
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("\nRedirecting to the '/' path\n")
+	http.Redirect(res, req, "/", 302)
+}
+
+func unfavorite_tweet(res http.ResponseWriter, req *http.Request) {
+	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
+
+	url_params := mux.Vars(req)
+	tweet_id := url_params["tweet_id"]
+
+	user_id, err := req.Cookie("session_uid")
+
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = Db.Exec("delete from favorites where user_id = $1 and tweet_id = $2", user_id.Value, tweet_id)
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("\nRedirecting to the '/' path\n")
+	http.Redirect(res, req, "/", 302)
+}
+
+// func is_favorite(tweet_id, user_id int) bool {
+
+// 	fave := Favorite{}
+// 	err := Db.QueryRow("select id, user_id, tweet_id, created_at from favorites where user_id = $1 and tweet_id = $2", strconv.Itoa(user_id), strconv.Itoa(tweet_id)).Scan(&fave.Id, &fave.User_id, &fave.Tweet_id, &fave.Created_at)
+
+// 	if err == sql.ErrNoRows {
+// 		return false
+// 	} else if err != nil {
+// 		panic(err)
+// 	}
+
+// 	return true
+// }

@@ -39,12 +39,14 @@ func main() {
 	gmux.HandleFunc("/update-user-meta", change_user_meta).Methods("POST")
 	gmux.HandleFunc("/update-user-password", change_user_password).Methods("POST")
 
+	gmux.HandleFunc("/profile/{user_id}", show_user_profile).Methods("GET")
+	gmux.HandleFunc("/follow-user/{user_id}", create_user_follow).Methods("POST")
+	gmux.HandleFunc("/unfollow-user/{user_id}", delete_user_follow).Methods("POST")
+
 	gmux.HandleFunc("/create-tweet", tweet_create).Methods("POST")
 	gmux.HandleFunc("/delete-tweet/{tweet_id}", tweet_delete).Methods("POST")
-
-	gmux.HandleFunc("/profile/{user_id}", show_user_profile).Methods("GET")
-	gmux.HandleFunc("/follow-user/{user_id}", create_user_follow).Methods("GET")
-	gmux.HandleFunc("/unfollow-user/{user_id}", delete_user_follow).Methods("GET")
+	gmux.HandleFunc("/favorite/{tweet_id}", favorite_tweet).Methods("POST")
+	gmux.HandleFunc("/unfavorite/{tweet_id}", unfavorite_tweet).Methods("POST")
 
 	gmux.HandleFunc("/favicon.ico", handlerIcon).Methods("GET")
 	gmux.HandleFunc("/", home).Methods("GET")
