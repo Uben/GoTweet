@@ -6,30 +6,11 @@ import (
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
+	"gowebapp/models"
 	"log"
 	"net/http"
 	"time"
 )
-
-// Create a struct for querying User information
-type User struct {
-	Id         int
-	Name       string
-	Email      string
-	Username   string
-	Hash       string
-	Created_at time.Time
-	Updated_at time.Time
-}
-
-type User_meta struct {
-	Id          int
-	User_id     int
-	Description sql.NullString
-	Url         sql.NullString
-	Created_at  time.Time
-	Updated_at  time.Time
-}
 
 // GET
 func user_register(res http.ResponseWriter, req *http.Request) {
@@ -100,8 +81,8 @@ func register(res http.ResponseWriter, req *http.Request) {
 func update_user(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\nUser accessed the '%s' url path.\n", req.URL.Path)
 
-	retUser := User{}
-	retMeta := User_meta{}
+	retUser := Models.User{}
+	retMeta := Models.UserMeta{}
 
 	user_id, err := req.Cookie("session_uid")
 
@@ -210,7 +191,7 @@ func change_user_password(res http.ResponseWriter, req *http.Request) {
 	old_password := req.PostFormValue("old-password")
 	new_password := req.PostFormValue("new-password")
 	confirm_new_password := req.PostFormValue("confirm-new-password")
-	retUser := User{}
+	retUser := Models.User{}
 
 	user_id, err := req.Cookie("session_uid")
 
@@ -261,7 +242,7 @@ func delete_user(res http.ResponseWriter, req *http.Request) {
 
 	req.ParseForm()
 	password := req.PostFormValue("password")
-	retUser := User{}
+	retUser := Models.User{}
 
 	user_id, err := req.Cookie("session_uid")
 
@@ -296,8 +277,8 @@ func delete_user(res http.ResponseWriter, req *http.Request) {
 func show_user_profile(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
 
-	retUser := User{}
-	retMeta := User_meta{}
+	retUser := Models.User{}
+	retMeta := Models.UserMeta{}
 	url_params := mux.Vars(req)
 	user_id := url_params["user_id"]
 
@@ -375,11 +356,11 @@ func show_user_profile(res http.ResponseWriter, req *http.Request) {
 	tpl.ExecuteTemplate(res, "profile.html", pageData)
 }
 
-func getUserTweets(user_id string) (bool, []metaTweet) {
+func getUserTweets(user_id string) (bool, []Models.MetaTweet) {
 	fmt.Printf("\nGetting Tweets :o\n")
 
 	var foundTweets = true
-	var tweets []metaTweet
+	var tweets []Models.MetaTweet
 
 	// get user follow relations and use that to find all the tweets of the users the current logged in user follows, use 'group by' and 'count(*)' to do duplicate checking, and then order by the time created
 	rows, err := Db.Query("select distinct (t.id), t.user_id, u.name, u.username, t.msg, t.created_at from tweets t inner join users u on t.user_id = u.id where t.user_id = $1 order by t.created_at desc", user_id)
@@ -392,7 +373,7 @@ func getUserTweets(user_id string) (bool, []metaTweet) {
 	defer rows.Close()
 
 	for rows.Next() {
-		tweet := metaTweet{}
+		tweet := Models.MetaTweet{}
 
 		err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Name, &tweet.Username, &tweet.Message, &tweet.Created_at)
 

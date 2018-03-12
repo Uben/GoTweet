@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"gowebapp/models"
 	"log"
 	"net/http"
 	"text/template"
@@ -92,11 +93,11 @@ func home(res http.ResponseWriter, req *http.Request) {
 	tpl.ExecuteTemplate(res, "index.html", pageData)
 }
 
-func getTweets(user_id string) (bool, []metaTweet) {
+func getTweets(user_id string) (bool, []Models.MetaTweet) {
 	fmt.Printf("\nGetting Tweets for user $s :o\n", user_id)
 
 	var foundTweets = true
-	var tweets []metaTweet
+	var tweets []Models.MetaTweet
 
 	rows, err := Db.Query("select distinct (t.id), t.user_id, u.name, u.username, t.msg, t.created_at from tweets t inner join users u on t.user_id = u.id inner join user_follows f on t.user_id = f.following_id where f.follower_id = $1 or t.user_id = $1 order by t.created_at desc", user_id)
 	// old sql statement: select t.id, t.user_id, msg, t.created_at, count(*) from user_follows f left join tweets t on f.follower_id = $1 and f.following_id = t.user_id or t.user_id = $1 group by t.id order by t.created_at desc
@@ -108,7 +109,7 @@ func getTweets(user_id string) (bool, []metaTweet) {
 	defer rows.Close()
 
 	for rows.Next() {
-		tweet := metaTweet{}
+		tweet := Models.MetaTweet{}
 
 		err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Name, &tweet.Username, &tweet.Message, &tweet.Created_at)
 

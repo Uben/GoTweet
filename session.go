@@ -6,19 +6,11 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
+	"gowebapp/models"
 	"net/http"
 	"strconv"
 	"time"
 )
-
-// Create a struct for querying Session information
-type Session struct {
-	Id         int
-	User_id    int
-	Token      string
-	Created_at time.Time
-	Updated_at time.Time
-}
 
 // GET
 func user_login(res http.ResponseWriter, req *http.Request) {
@@ -41,7 +33,7 @@ func login(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	email := req.PostFormValue("email")
 	password := req.PostFormValue("password")
-	retUser := User{}
+	retUser := Models.User{}
 
 	// Get the user info and scan it into the user struct
 	err := Db.QueryRow("select id, name, email, username, password, created_at, updated_at from users where email = $1 limit 1", email).Scan(&retUser.Id, &retUser.Name, &retUser.Email, &retUser.Username, &retUser.Hash, &retUser.Created_at, &retUser.Updated_at)
@@ -59,7 +51,7 @@ func login(res http.ResponseWriter, req *http.Request) {
 
 		if err == nil {
 			// Create a new UUID for the session
-			user_uuid := uuid.NewV4()
+			user_uuid, err := uuid.NewV4()
 
 			// Set cookie Expire date to one day from now
 			expire := time.Now().AddDate(0, 0, 1)
@@ -100,7 +92,7 @@ func login(res http.ResponseWriter, req *http.Request) {
 			http.SetCookie(res, session_username_cookie)
 
 			currentTime := time.Now()
-			_, err := Db.Exec("insert into sessions (user_id, token, created_at, updated_at) values ($1, $2, $3, $3)", &retUser.Id, user_uuid.String(), currentTime)
+			_, err = Db.Exec("insert into sessions (user_id, token, created_at, updated_at) values ($1, $2, $3, $3)", &retUser.Id, user_uuid.String(), currentTime)
 
 			if err != nil {
 				panic(err)
@@ -201,7 +193,7 @@ func is_user_logged_in(r *http.Request) bool {
 	// Get the "session" cookie
 	session_cookie, err := r.Cookie("session")
 	// Create an empty session struct
-	retSession := Session{}
+	retSession := Models.Session{}
 
 	// If there isnt an error && the value of 'session_cookie' isnt equal to ""
 	if (err == nil) && (session_cookie.Value != "") {

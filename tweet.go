@@ -5,33 +5,10 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"gowebapp/models"
 	"net/http"
 	"time"
 )
-
-type Tweet struct {
-	Id         int
-	User_id    int
-	Message    string
-	Created_at time.Time
-}
-
-type metaTweet struct {
-	Id         int
-	User_id    int
-	Name       string
-	Username   string
-	Message    string
-	Created_at time.Time
-}
-
-type Favorite struct {
-	Id         int
-	User_id    int
-	Tweet_id   int
-	Created_at time.Time
-	Updated_at time.Time
-}
 
 func tweet_create(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
@@ -57,7 +34,7 @@ func tweet_create(res http.ResponseWriter, req *http.Request) {
 func tweet_delete(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
 
-	session := Session{}
+	session := Models.Session{}
 	session_cookie, err := req.Cookie("session")
 
 	if err != nil {

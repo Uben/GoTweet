@@ -2,20 +2,13 @@ package main
 
 import (
 	// "database/sql"
+	// "gowebapp/models"
 	"fmt"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"net/http"
 	"time"
 )
-
-type Follow struct {
-	Id           int
-	follower_id  int
-	following_id int
-	Created_at   time.Time
-	Updated_at   time.Time
-}
 
 func create_user_follow(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\nUser accessed the '%s' url path.\n", req.URL.Path)

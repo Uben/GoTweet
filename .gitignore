@@ -1,0 +1,5 @@
+# files git should ignore from commits
+
+gowebapp
+.DS_Store
+models/.DS_Store
