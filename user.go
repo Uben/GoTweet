@@ -363,8 +363,9 @@ func getUserTweets(user_id string) (bool, []Models.Tweet) {
 	var tweets []Models.Tweet
 
 	// get user follow relations and use that to find all the tweets of the users the current logged in user follows, use 'group by' and 'count(*)' to do duplicate checking, and then order by the time created
-	rows, err := Db.Query("select distinct (t.id), t.user_id, u.name, u.username, t.msg, t.is_retweet, origin_tweet_id, origin_user_id, t.created_at from tweets t inner join users u on t.user_id = u.id where t.user_id = $1 order by t.created_at desc", user_id)
+	rows, err := Db.Query("select id, user_id, msg, name, username, is_retweet, origin_tweet_id, origin_user_id, origin_name, origin_username, created_at from tweets where user_id = $1 order by created_at desc", user_id)
 	// select id, user_id, msg, created_at from tweets where user_id = $1 order by created_at desc limit 15
+	// select distinct (t.id), t.user_id, u.name, u.username, t.msg, t.is_retweet, origin_tweet_id, origin_user_id, t.created_at from tweets t inner join users u on t.user_id = u.id where t.user_id = $1 order by t.created_at desc
 
 	if err != nil {
 		log.Fatal(err)
@@ -375,7 +376,7 @@ func getUserTweets(user_id string) (bool, []Models.Tweet) {
 	for rows.Next() {
 		tweet := Models.Tweet{}
 
-		err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Name, &tweet.Username, &tweet.Message, &tweet.Is_retweet, &tweet.Otweet_id, &tweet.Ouser_id, &tweet.Created_at)
+		err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Message, &tweet.Name, &tweet.Username, &tweet.Is_retweet, &tweet.Otweet_id, &tweet.Ouser_id, &tweet.Oname, &tweet.Ousername, &tweet.Created_at)
 
 		switch {
 		case err == sql.ErrNoRows:

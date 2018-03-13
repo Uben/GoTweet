@@ -45,8 +45,8 @@ type Tweet struct {
 	Name       sql.NullString
 	Username   sql.NullString
 	Is_retweet bool
-	Otweet_id  sql.NullInt64
-	Ouser_id   sql.NullInt64
+	Otweet_id  int
+	Ouser_id   int
 	Oname      sql.NullString
 	Ousername  sql.NullString
 	Created_at time.Time

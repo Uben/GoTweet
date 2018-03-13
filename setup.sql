@@ -39,13 +39,17 @@ create table if not exists sessions (
 );
 
 create table if not exists tweets (
-	id			serial primary key,
-	user_id		integer references users(id),
-	msg			varchar(255),
-	is_retweet  boolean,
-	origin_tweet_id integer references tweets(id),
-	origin_user_id integer references tweets(user_id),
-	created_at	timestamp
+	id				serial primary key,
+	user_id			integer references users(id),
+	msg				varchar(255),
+	name 			varchar(255),
+	username 		varchar(255),
+	is_retweet  	boolean default FALSE,
+	origin_tweet_id int default 0, -- references tweets(id)
+	origin_user_id 	int default 0, -- references users(id)
+	origin_name 	varchar(255),
+	origin_username varchar(255),
+	created_at		timestamp
 );
 
 create table if not exists favorites (
@@ -60,11 +64,31 @@ create table if not exists favorites (
 -- alter table tweets drop column updated_at;
 -- alter table favorites drop column updated_at;
 
+alter table tweets drop column name;
+alter table tweets add column name varchar(255);
+
+alter table tweets drop column username;
+alter table tweets add column username varchar(255);
+
 alter table tweets drop column is_retweet;
 alter table tweets add column is_retweet boolean default FALSE;
 
-alter table tweets drop column orgin_user_id;
-alter table tweets add column origin_user_id integer references users(id);
+alter table tweets drop column origin_tweet_id;
+alter table tweets add column origin_tweet_id int default 0; -- references tweets(id)
 
-alter table tweets drop column orgin_tweet_id;
-alter table tweets add column origin_tweet_id integer references tweets(id);
+alter table tweets drop column origin_user_id;
+alter table tweets add column origin_user_id int default 0; -- references users(id)
+
+alter table tweets drop column origin_name;
+alter table tweets add column origin_name varchar(255);
+
+alter table tweets drop column origin_username;
+alter table tweets add column origin_username varchar(255);
+
+
+
+
+
+
+
+

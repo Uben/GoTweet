@@ -50,10 +50,7 @@ func main() {
 	/* Tweet Routes */
 	gmux.HandleFunc("/create-tweet", tweet_create).Methods("POST")
 	gmux.HandleFunc("/delete-tweet/{tweet_id}", tweet_delete).Methods("POST")
-
-	/* Retweet Routes */
 	gmux.HandleFunc("/create-retweet/{tweet_id}", retweet_create).Methods("GET")
-	gmux.HandleFunc("/delete-retweet/{tweet_id}", retweet_delete).Methods("GET")
 
 	/* Tweet Favorite Routes */
 	gmux.HandleFunc("/favorite/{tweet_id}", favorite_tweet).Methods("POST")
@@ -110,11 +107,12 @@ func getTweets(user_id string) (bool, []Models.Tweet) {
 	var foundTweets = true
 	var tweets []Models.Tweet
 
-	rows, err := Db.Query("select distinct (t.id), t.user_id, u.name, u.username, t.msg, t.is_retweet, origin_tweet_id, origin_user_id, t.created_at from tweets t inner join users u on t.user_id = u.id inner join user_follows f on t.user_id = f.following_id where f.follower_id = $1 or t.user_id = $1 order by t.created_at desc", user_id)
+	rows, err := Db.Query("select distinct (t.id), user_id, msg, name, username, is_retweet, origin_tweet_id, origin_user_id, origin_name, origin_username, t.created_at from tweets t inner join user_follows f on t.user_id = f.following_id where f.follower_id = $1 or t.user_id = $1 order by t.created_at desc", user_id)
 	// old sql statement: select t.id, t.user_id, msg, t.created_at, count(*) from user_follows f left join tweets t on f.follower_id = $1 and f.following_id = t.user_id or t.user_id = $1 group by t.id order by t.created_at desc
+	// select distinct (t.id), t.user_id, t.msg, u.name, u.username, t.is_retweet, t.origin_tweet_id, t.origin_user_id, t.origin_name, t.origin_username, t.created_at from tweets t inner join users u on t.user_id = u.id inner join user_follows f on t.user_id = f.following_id where f.follower_id = $1 or t.user_id = $1 order by t.created_at desc
 
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	defer rows.Close()
@@ -122,7 +120,7 @@ func getTweets(user_id string) (bool, []Models.Tweet) {
 	for rows.Next() {
 		tweet := Models.Tweet{}
 
-		err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Name, &tweet.Username, &tweet.Message, &tweet.Is_retweet, &tweet.Otweet_id, &tweet.Ouser_id, &tweet.Created_at)
+		err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Message, &tweet.Name, &tweet.Username, &tweet.Is_retweet, &tweet.Otweet_id, &tweet.Ouser_id, &tweet.Oname, &tweet.Ousername, &tweet.Created_at)
 
 		switch {
 		case err == sql.ErrNoRows:
