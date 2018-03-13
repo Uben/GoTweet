@@ -29,7 +29,6 @@ type Follow struct {
 	follower_id  int
 	following_id int
 	Created_at   time.Time
-	Updated_at   time.Time
 }
 
 type Session struct {
@@ -37,22 +36,19 @@ type Session struct {
 	User_id    int
 	Token      string
 	Created_at time.Time
-	Updated_at time.Time
 }
 
 type Tweet struct {
 	Id         int
 	User_id    int
 	Message    string
-	Created_at time.Time
-}
-
-type MetaTweet struct {
-	Id         int
-	User_id    int
-	Name       string
-	Username   string
-	Message    string
+	Name       sql.NullString
+	Username   sql.NullString
+	Is_retweet bool
+	Otweet_id  sql.NullInt64
+	Ouser_id   sql.NullInt64
+	Oname      sql.NullString
+	Ousername  sql.NullString
 	Created_at time.Time
 }
 
@@ -61,5 +57,4 @@ type Favorite struct {
 	User_id    int
 	Tweet_id   int
 	Created_at time.Time
-	Updated_at time.Time
 }

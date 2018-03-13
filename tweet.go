@@ -19,9 +19,9 @@ func tweet_create(res http.ResponseWriter, req *http.Request) {
 	// Get the "session_uid" cookie to get the current loged in users id
 	user_id, err := req.Cookie("session_uid")
 
-	currentTime := time.Now()
+	current_time := time.Now()
 
-	_, err = Db.Exec("insert into tweets (user_id, msg, created_at, updated_at) values ($1, $2, $3, $3)", user_id.Value, tweet_text, currentTime)
+	_, err = Db.Exec("insert into tweets (user_id, msg, created_at) values ($1, $2, $3)", user_id.Value, tweet_text, current_time)
 
 	if err != nil {
 		panic(err)
@@ -41,7 +41,7 @@ func tweet_delete(res http.ResponseWriter, req *http.Request) {
 		panic(err)
 	}
 
-	err = Db.QueryRow("select id, user_id, token, created_at, updated_at from sessions where token = $1", session_cookie.Value).Scan(&session.Id, &session.User_id, &session.Token, &session.Created_at, &session.Updated_at)
+	err = Db.QueryRow("select id, user_id, token, created_at from sessions where token = $1", session_cookie.Value).Scan(&session.Id, &session.User_id, &session.Token, &session.Created_at)
 
 	if err == nil {
 		url_params := mux.Vars(req)
@@ -60,12 +60,26 @@ func tweet_delete(res http.ResponseWriter, req *http.Request) {
 	http.Redirect(res, req, "/", 302)
 }
 
+func retweet_create(res http.ResponseWriter, req *http.Request) {
+	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
+
+	fmt.Printf("\nRedirecting to the '/' path\n")
+	http.Redirect(res, req, "/", 302)
+}
+
+func retweet_delete(res http.ResponseWriter, req *http.Request) {
+	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
+
+	fmt.Printf("\nRedirecting to the '/' path\n")
+	http.Redirect(res, req, "/", 302)
+}
+
 func favorite_tweet(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("\n\nUser accessed the '%s' url path.\n", req.URL.Path)
 
 	url_params := mux.Vars(req)
 	tweet_id := url_params["tweet_id"]
-	currentTime := time.Now()
+	current_time := time.Now()
 
 	user_id, err := req.Cookie("session_uid")
 
@@ -73,7 +87,7 @@ func favorite_tweet(res http.ResponseWriter, req *http.Request) {
 		panic(err)
 	}
 
-	_, err = Db.Exec("insert into favorites (user_id, tweet_id, created_at, updated_at) values ($1, $2, $3, $3)", user_id.Value, tweet_id, currentTime)
+	_, err = Db.Exec("insert into favorites (user_id, tweet_id, created_at) values ($1, $2, $3)", user_id.Value, tweet_id, current_time)
 
 	if err != nil {
 		panic(err)

@@ -1,7 +1,7 @@
 package main
 
 import (
-	// "database/sql"
+	_ "database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
 	"github.com/satori/go.uuid"
@@ -36,7 +36,7 @@ func login(res http.ResponseWriter, req *http.Request) {
 	retUser := Models.User{}
 
 	// Get the user info and scan it into the user struct
-	err := Db.QueryRow("select id, name, email, username, password, created_at, updated_at from users where email = $1 limit 1", email).Scan(&retUser.Id, &retUser.Name, &retUser.Email, &retUser.Username, &retUser.Hash, &retUser.Created_at, &retUser.Updated_at)
+	err := Db.QueryRow("select id, name, email, username, password, created_at from users where email = $1 limit 1", email).Scan(&retUser.Id, &retUser.Name, &retUser.Email, &retUser.Username, &retUser.Hash, &retUser.Created_at)
 
 	if err != nil {
 		panic(err)
@@ -91,8 +91,8 @@ func login(res http.ResponseWriter, req *http.Request) {
 			http.SetCookie(res, session_uid_cookie)
 			http.SetCookie(res, session_username_cookie)
 
-			currentTime := time.Now()
-			_, err = Db.Exec("insert into sessions (user_id, token, created_at, updated_at) values ($1, $2, $3, $3)", &retUser.Id, user_uuid.String(), currentTime)
+			current_time := time.Now()
+			_, err = Db.Exec("insert into sessions (user_id, token, created_at) values ($1, $2, $3)", &retUser.Id, user_uuid.String(), current_time)
 
 			if err != nil {
 				panic(err)
@@ -199,7 +199,7 @@ func is_user_logged_in(r *http.Request) bool {
 	if (err == nil) && (session_cookie.Value != "") {
 
 		// Find a document with a 'Token' value that is equal to the session cookie value
-		err := Db.QueryRow("select id, user_id, token, created_at, updated_at from sessions where token = $1", session_cookie.Value).Scan(&retSession.Id, &retSession.User_id, &retSession.Token, &retSession.Created_at, &retSession.Updated_at)
+		err := Db.QueryRow("select id, user_id, token, created_at from sessions where token = $1", session_cookie.Value).Scan(&retSession.Id, &retSession.User_id, &retSession.Token, &retSession.Created_at)
 
 		// If there is no error getting the data && Check if the value of 'uuid' in the found document is equal to the 'Value' in 'session_cookie'
 		if (err == nil) && (retSession.Token == session_cookie.Value) {

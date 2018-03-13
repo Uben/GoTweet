@@ -24,7 +24,7 @@ func create_user_follow(res http.ResponseWriter, req *http.Request) {
 
 	current_time := time.Now()
 
-	_, err = Db.Exec("insert into user_follows (follower_id, following_id, created_at, updated_at) values ($1, $2, $3, $3)", follower_id.Value, following_id, current_time)
+	_, err = Db.Exec("insert into user_follows (follower_id, following_id, created_at) values ($1, $2, $3)", follower_id.Value, following_id, current_time)
 
 	if err != nil {
 		panic(err)

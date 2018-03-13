@@ -52,19 +52,19 @@ func register(res http.ResponseWriter, req *http.Request) {
 			}
 
 			// Get the current time
-			currentTime := time.Now()
+			current_time := time.Now()
 			// insert the user into the users table in postgres
-			nErr := Db.QueryRow("insert into users (name, email, username, password, created_at, updated_at) values ($1, $2, $3, $4, $5, $5) returning id", name, email, username, hashPass, currentTime).Scan(&user_id)
+			err = Db.QueryRow("insert into users (name, email, username, password, created_at, updated_at) values ($1, $2, $3, $4, $5, $5) returning id", name, email, username, hashPass, current_time).Scan(&user_id)
 
 			// Check of there is an error connecting to the database
-			if nErr == nil {
-				_, err = Db.Exec("insert into user_meta (user_id, created_at, updated_at) values ($1, $2, $2)", user_id, currentTime)
+			if err == nil {
+				_, err = Db.Exec("insert into user_meta (user_id, created_at, updated_at) values ($1, $2, $2)", user_id, current_time)
 
 				if err != nil {
 					panic(err)
 				}
 			} else {
-				panic(nErr)
+				panic(err)
 			}
 
 		}
@@ -139,9 +139,9 @@ func change_user_info(res http.ResponseWriter, req *http.Request) {
 		user_id, err := req.Cookie("session_uid")
 
 		// Get the current time
-		currentTime := time.Now()
+		current_time := time.Now()
 		// update the users table in postgress
-		_, err = Db.Exec("update users set name = $2, email = $3, username = $4, updated_at = $5 where id = $1", user_id.Value, name, email, username, currentTime)
+		_, err = Db.Exec("update users set name = $2, email = $3, username = $4, updated_at = $5 where id = $1", user_id.Value, name, email, username, current_time)
 
 		if err != nil {
 			panic(err)
@@ -216,9 +216,9 @@ func change_user_password(res http.ResponseWriter, req *http.Request) {
 			}
 
 			// Get the current time
-			currentTime := time.Now()
+			current_time := time.Now()
 			// update the user into the users table in postgres
-			_, err = Db.Exec("update users set password = $2, updated_at = $3 where id = $1", user_id.Value, hashPass, currentTime)
+			_, err = Db.Exec("update users set password = $2, updated_at = $3 where id = $1", user_id.Value, hashPass, current_time)
 
 			// Check of there is an error connecting to the database
 			if err != nil {
@@ -356,14 +356,14 @@ func show_user_profile(res http.ResponseWriter, req *http.Request) {
 	tpl.ExecuteTemplate(res, "profile.html", pageData)
 }
 
-func getUserTweets(user_id string) (bool, []Models.MetaTweet) {
+func getUserTweets(user_id string) (bool, []Models.Tweet) {
 	fmt.Printf("\nGetting Tweets :o\n")
 
 	var foundTweets = true
-	var tweets []Models.MetaTweet
+	var tweets []Models.Tweet
 
 	// get user follow relations and use that to find all the tweets of the users the current logged in user follows, use 'group by' and 'count(*)' to do duplicate checking, and then order by the time created
-	rows, err := Db.Query("select distinct (t.id), t.user_id, u.name, u.username, t.msg, t.created_at from tweets t inner join users u on t.user_id = u.id where t.user_id = $1 order by t.created_at desc", user_id)
+	rows, err := Db.Query("select distinct (t.id), t.user_id, u.name, u.username, t.msg, t.is_retweet, origin_tweet_id, origin_user_id, t.created_at from tweets t inner join users u on t.user_id = u.id where t.user_id = $1 order by t.created_at desc", user_id)
 	// select id, user_id, msg, created_at from tweets where user_id = $1 order by created_at desc limit 15
 
 	if err != nil {
@@ -373,9 +373,9 @@ func getUserTweets(user_id string) (bool, []Models.MetaTweet) {
 	defer rows.Close()
 
 	for rows.Next() {
-		tweet := Models.MetaTweet{}
+		tweet := Models.Tweet{}
 
-		err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Name, &tweet.Username, &tweet.Message, &tweet.Created_at)
+		err := rows.Scan(&tweet.Id, &tweet.User_id, &tweet.Name, &tweet.Username, &tweet.Message, &tweet.Is_retweet, &tweet.Otweet_id, &tweet.Ouser_id, &tweet.Created_at)
 
 		switch {
 		case err == sql.ErrNoRows:

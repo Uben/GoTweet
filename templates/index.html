@@ -79,7 +79,7 @@
 					<div class="tweet" data-tweet-id="{{ .Id }}" data-tweet-user-id="{{ .User_id }}">
 						<p> 
 							<a href="/profile/{{ .User_id }}" class="tweet-username">
-								{{ .Name }} <span class="username">@{{ .Username }}</span>
+								{{ .Name.String }} <span class="username">@{{ .Username.String }}</span>
 							</a>
 							<span class="time"> - {{ .Created_at }} </span>
 						</p>
