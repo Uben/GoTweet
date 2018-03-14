@@ -105,7 +105,11 @@ func retweet_create(res http.ResponseWriter, req *http.Request) {
 		panic(err)
 	}
 
-	_, err = Db.Exec("insert into tweets (user_id, msg, name, username, is_retweet, origin_tweet_id, origin_user_id, origin_name, origin_username, created_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", retUser.Id, tweet.Message, retUser.Name, retUser.Username, is_retweet, tweet.Id, tweet.User_id, tweet.Name, tweet.Username, current_time)
+	if tweet.Is_retweet == false {
+		_, err = Db.Exec("insert into tweets (user_id, msg, name, username, is_retweet, origin_tweet_id, origin_user_id, origin_name, origin_username, created_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", retUser.Id, tweet.Message, retUser.Name, retUser.Username, is_retweet, tweet.Id, tweet.User_id, tweet.Name, tweet.Username, current_time)
+	} else {
+		_, err = Db.Exec("insert into tweets (user_id, msg, name, username, is_retweet, origin_tweet_id, origin_user_id, origin_name, origin_username, created_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", retUser.Id, tweet.Message, retUser.Name, retUser.Username, is_retweet, tweet.Otweet_id, tweet.Ouser_id, tweet.Oname, tweet.Ousername, current_time)
+	}
 
 	if err != nil {
 		panic(err)

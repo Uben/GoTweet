@@ -16,30 +16,9 @@
 			{{ end}}
 		</p>
 
-		<h3> {{ .Username }}s Tweets </h3>
+		<h3> {{ .Username }}'s Tweets </h3>
 
-		<div style="display: flex; flex-flow: column; align-items: flex-start;">
-			{{ if .foundTweets }}
-				<div id="timeline">
-					{{ range $idx, $tweet := .Tweets }}
-						<div class="tweet" data-tweet-id="{{ .Id }}" data-tweet-user-id="{{ .User_id }}">
-							<p> 
-								<a href="/profile/{{ .User_id }}" class="tweet-username">
-									{{ .Name.String }} <span class="username">@{{ .Username.String }}</span>
-								</a>
-								<span class="time"> - {{ .Created_at }} </span>
-							</p>
-							<p> {{ .Message }} </p>
-						</div>
-					{{ end }}
-				</div>
-			{{ else }}
-				<div>
-					<h3> {{ .Username }} hasn't tweeted yet D: </h3>
-				</div>
-			{{ end }}
-
-		</div>
+		{{ template "timeline" . }}
 
 
 	{{ else }}
@@ -49,66 +28,6 @@
 		</div>
 
 	{{ end }}
-
-
-
-
-	<style>
-		#timeline {
-			display: flex;
-			flex-flow: column;
-			align-items: flex-start;
-		}
-
-		.tweet {
-			display: inline-block;
-			width: 550px;
-			margin: 0 0 5px 0;
-			padding: 10px 15px;
-			border-radius: 5px;
-			border: 1px solid #DDD;
-		}
-
-		.tweet p {
-			margin: 5px 0;
-		}
-
-		.tweet p:first-child a {
-			color: #333;
-			text-decoration: none;
-			margin: 0;
-			font-size: 13px;
-			font-weight: 700;
-		}
-
-		.tweet p:first-child a span.username {
-			color: #555 !important;
-			font-size: 13px;
-			font-weight: 400;
-
-			display: inline-block;
-			margin: 0 3px;
-		}
-
-		.tweet p:first-child:hover > a *:not(.username) {
-			text-decoration: underline;
-		}
-
-		.tweet p:first-child span.time {
-			color: #333;
-			text-decoration: none;
-			margin: 0;
-			font-size: 12px;
-			font-weight: 400;
-		}
-
-		.tweet p:last-child {
-			font-weight: 400;
-			font-size: 13px;
-			color: #333;
-			margin: 0;
-		}
-	</style>
 
 
 {{ template "footer" . }}

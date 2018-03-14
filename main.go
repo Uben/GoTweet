@@ -39,22 +39,22 @@ func main() {
 
 	// User Account Info Routes
 	gmux.HandleFunc("/settings", update_user).Methods("GET")
-	gmux.HandleFunc("/update-user-info", change_user_info).Methods("POST")
-	gmux.HandleFunc("/update-user-meta", change_user_meta).Methods("POST")
-	gmux.HandleFunc("/update-user-password", change_user_password).Methods("POST")
+	gmux.HandleFunc("/update-user-info", change_user_info).Methods("GET")
+	gmux.HandleFunc("/update-user-meta", change_user_meta).Methods("GET")
+	gmux.HandleFunc("/update-user-password", change_user_password).Methods("GET")
 
 	gmux.HandleFunc("/profile/{user_id}", show_user_profile).Methods("GET")
-	gmux.HandleFunc("/follow-user/{user_id}", create_user_follow).Methods("POST")
-	gmux.HandleFunc("/unfollow-user/{user_id}", delete_user_follow).Methods("POST")
+	gmux.HandleFunc("/follow-user/{user_id}", create_user_follow).Methods("GET")
+	gmux.HandleFunc("/unfollow-user/{user_id}", delete_user_follow).Methods("GET")
 
 	/* Tweet Routes */
-	gmux.HandleFunc("/create-tweet", tweet_create).Methods("POST")
-	gmux.HandleFunc("/delete-tweet/{tweet_id}", tweet_delete).Methods("POST")
+	gmux.HandleFunc("/create-tweet", tweet_create).Methods("GET")
+	gmux.HandleFunc("/delete-tweet/{tweet_id}", tweet_delete).Methods("GET")
 	gmux.HandleFunc("/create-retweet/{tweet_id}", retweet_create).Methods("GET")
 
 	/* Tweet Favorite Routes */
-	gmux.HandleFunc("/favorite/{tweet_id}", favorite_tweet).Methods("POST")
-	gmux.HandleFunc("/unfavorite/{tweet_id}", unfavorite_tweet).Methods("POST")
+	gmux.HandleFunc("/favorite/{tweet_id}", favorite_tweet).Methods("GET")
+	gmux.HandleFunc("/unfavorite/{tweet_id}", unfavorite_tweet).Methods("GET")
 
 	/* Base Routes */
 	gmux.HandleFunc("/favicon.ico", handlerIcon).Methods("GET")
