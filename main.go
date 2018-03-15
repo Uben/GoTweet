@@ -28,6 +28,7 @@ func main() {
 	gmux := mux.NewRouter()
 
 	uc := controllers.NewUserController(Db)
+	fc := controllers.NewFollowController(Db)
 
 	// Registration Routes
 	gmux.HandleFunc("/register", uc.New).Methods("GET")
@@ -46,8 +47,8 @@ func main() {
 	gmux.HandleFunc("/update-user-password", uc.UpdatePassword).Methods("POST")
 
 	gmux.HandleFunc("/profile/{user_id}", uc.Show).Methods("GET")
-	gmux.HandleFunc("/follow-user/{user_id}", create_user_follow).Methods("GET")
-	gmux.HandleFunc("/unfollow-user/{user_id}", delete_user_follow).Methods("GET")
+	gmux.HandleFunc("/follow-user/{user_id}", fc.Create).Methods("GET")
+	gmux.HandleFunc("/unfollow-user/{user_id}", fc.Delete).Methods("GET")
 
 	/* Tweet Routes */
 	gmux.HandleFunc("/create-tweet", tweet_create).Methods("POST")

@@ -10,7 +10,6 @@ import (
 	"gowebapp/models"
 	"log"
 	"net/http"
-	"text/template"
 	"time"
 )
 
@@ -22,15 +21,7 @@ func NewUserController(DBCon *sql.DB) *UserController {
 	return &UserController{DBCon}
 }
 
-var tpl *template.Template
-
-func init() {
-	tpl = template.Must(template.ParseGlob("templates/*.html"))
-}
-
 func (ctrl *UserController) New(res http.ResponseWriter, req *http.Request) {
-	fmt.Printf("\nUser accessed the '%s' url path.\n", req.URL.Path)
-
 	// Create map to pass data to template
 	pageData := map[string]interface{}{
 		"Title":          "Sign Up",
@@ -42,7 +33,6 @@ func (ctrl *UserController) New(res http.ResponseWriter, req *http.Request) {
 }
 
 func (ctrl *UserController) Create(res http.ResponseWriter, req *http.Request) {
-
 	var nil_check string
 	var user_id int
 	req.ParseForm()
@@ -87,7 +77,7 @@ func (ctrl *UserController) Create(res http.ResponseWriter, req *http.Request) {
 	}
 
 	fmt.Printf("\nRedirecting to the '/' path\n")
-	http.Redirect(res, req, "/", 200)
+	http.Redirect(res, req, "/", 302)
 }
 
 func (ctrl *UserController) Show(res http.ResponseWriter, req *http.Request) {
