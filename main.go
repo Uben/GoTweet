@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"gowebapp/controllers"
 	"gowebapp/models"
 	"log"
 	"net/http"
@@ -16,9 +17,7 @@ var Db *sql.DB
 
 func init() {
 	var err error
-	Db, err = sql.Open("postgres", "user=devtest dbname=gowebapp password=password sslmode=disable")
-
-	if err != nil {
+	if Db, err = sql.Open("postgres", "user=devtest dbname=gowebapp password=password sslmode=disable"); err != nil {
 		panic(err)
 	}
 
@@ -28,27 +27,30 @@ func init() {
 func main() {
 	gmux := mux.NewRouter()
 
+	uc := controllers.NewUserController(Db)
+
 	// Registration Routes
-	gmux.HandleFunc("/register", user_register).Methods("GET")
-	gmux.HandleFunc("/register", register).Methods("POST")
+	gmux.HandleFunc("/register", uc.New).Methods("GET")
+	gmux.HandleFunc("/register", uc.Create).Methods("POST")
+	gmux.HandleFunc("/delete-user", uc.Delete).Methods("POST")
 
 	// Session Routes
 	gmux.HandleFunc("/login", user_login).Methods("GET")
 	gmux.HandleFunc("/login", login).Methods("POST")
-	gmux.HandleFunc("/logout", isAuth(logout)).Methods("GET")
+	gmux.HandleFunc("/logout", logout).Methods("GET")
 
 	// User Account Info Routes
-	gmux.HandleFunc("/settings", update_user).Methods("GET")
-	gmux.HandleFunc("/update-user-info", change_user_info).Methods("GET")
-	gmux.HandleFunc("/update-user-meta", change_user_meta).Methods("GET")
-	gmux.HandleFunc("/update-user-password", change_user_password).Methods("GET")
+	gmux.HandleFunc("/settings", uc.Edit).Methods("GET")
+	gmux.HandleFunc("/update-user-info", uc.UpdateInfo).Methods("POST")
+	gmux.HandleFunc("/update-user-meta", uc.UpdateMeta).Methods("POST")
+	gmux.HandleFunc("/update-user-password", uc.UpdatePassword).Methods("POST")
 
-	gmux.HandleFunc("/profile/{user_id}", show_user_profile).Methods("GET")
+	gmux.HandleFunc("/profile/{user_id}", uc.Show).Methods("GET")
 	gmux.HandleFunc("/follow-user/{user_id}", create_user_follow).Methods("GET")
 	gmux.HandleFunc("/unfollow-user/{user_id}", delete_user_follow).Methods("GET")
 
 	/* Tweet Routes */
-	gmux.HandleFunc("/create-tweet", tweet_create).Methods("GET")
+	gmux.HandleFunc("/create-tweet", tweet_create).Methods("POST")
 	gmux.HandleFunc("/delete-tweet/{tweet_id}", tweet_delete).Methods("GET")
 	gmux.HandleFunc("/create-retweet/{tweet_id}", retweet_create).Methods("GET")
 
