@@ -51,6 +51,23 @@ func GetUserTweets(user_id string, Db *sql.DB) (bool, []Models.Tweet) {
 	return foundTweets, tweets
 }
 
+func IsAuth(h http.HandlerFunc, Db *sql.DB) http.HandlerFunc {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		// Check if user is logged in
+		userAuthStatus := IsUserLoggedIn(req, Db)
+
+		// if the user is logged in, show the page
+		if userAuthStatus == true {
+			h.ServeHTTP(res, req)
+
+			// else have them login
+		} else {
+			http.Redirect(res, req, "/", 200)
+		}
+
+	})
+}
+
 func IsUserLoggedIn(r *http.Request, Db *sql.DB) bool {
 	fmt.Printf("\nChecking if the user is logged in.\n")
 

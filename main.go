@@ -27,6 +27,7 @@ func init() {
 func main() {
 	// Controllers
 	uc := controllers.NewUserController(Db)
+	sc := controllers.NewSessionController(Db)
 	fc := controllers.NewFollowController(Db)
 	tc := controllers.NewTweetController(Db)
 
@@ -38,9 +39,9 @@ func main() {
 	gmux.HandleFunc("/delete-user", uc.Delete).Methods("POST")
 
 	// Session Routes
-	gmux.HandleFunc("/login", user_login).Methods("GET")
-	gmux.HandleFunc("/login", login).Methods("POST")
-	gmux.HandleFunc("/logout", logout).Methods("GET")
+	gmux.HandleFunc("/login", sc.Get).Methods("GET")
+	gmux.HandleFunc("/login", sc.Create).Methods("POST")
+	gmux.HandleFunc("/logout", sc.Delete).Methods("GET")
 
 	// User Account Info Routes
 	gmux.HandleFunc("/settings", uc.Edit).Methods("GET")
