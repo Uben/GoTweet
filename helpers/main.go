@@ -7,6 +7,7 @@ import (
 	"gowebapp/models"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 var Db *sql.DB
@@ -79,4 +80,17 @@ func IsUserLoggedIn(r *http.Request, Db *sql.DB) bool {
 	}
 
 	return false
+}
+
+func IsFavorite(tweet_id, user_id int, Db *sql.DB) bool {
+	fave := Models.Favorite{}
+	err := Db.QueryRow("select id, user_id, tweet_id, created_at from favorites where user_id = $1 and tweet_id = $2", strconv.Itoa(user_id), strconv.Itoa(tweet_id)).Scan(&fave.Id, &fave.User_id, &fave.Tweet_id, &fave.Created_at)
+
+	if err == sql.ErrNoRows {
+		return false
+	} else if err != nil {
+		panic(err)
+	}
+
+	return true
 }

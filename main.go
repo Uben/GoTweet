@@ -25,10 +25,12 @@ func init() {
 }
 
 func main() {
-	gmux := mux.NewRouter()
-
+	// Controllers
 	uc := controllers.NewUserController(Db)
 	fc := controllers.NewFollowController(Db)
+	tc := controllers.NewTweetController(Db)
+
+	gmux := mux.NewRouter()
 
 	// Registration Routes
 	gmux.HandleFunc("/register", uc.New).Methods("GET")
@@ -51,13 +53,13 @@ func main() {
 	gmux.HandleFunc("/unfollow-user/{user_id}", fc.Delete).Methods("GET")
 
 	/* Tweet Routes */
-	gmux.HandleFunc("/create-tweet", tweet_create).Methods("POST")
-	gmux.HandleFunc("/delete-tweet/{tweet_id}", tweet_delete).Methods("GET")
-	gmux.HandleFunc("/create-retweet/{tweet_id}", retweet_create).Methods("GET")
+	gmux.HandleFunc("/create-tweet", tc.Create).Methods("POST")
+	gmux.HandleFunc("/delete-tweet/{tweet_id}", tc.Delete).Methods("GET")
+	gmux.HandleFunc("/create-retweet/{tweet_id}", tc.Retweet).Methods("GET")
 
 	/* Tweet Favorite Routes */
-	gmux.HandleFunc("/favorite/{tweet_id}", favorite_tweet).Methods("GET")
-	gmux.HandleFunc("/unfavorite/{tweet_id}", unfavorite_tweet).Methods("GET")
+	gmux.HandleFunc("/favorite/{tweet_id}", tc.Favorite).Methods("GET")
+	gmux.HandleFunc("/unfavorite/{tweet_id}", tc.Unfavorite).Methods("GET")
 
 	/* Base Routes */
 	gmux.HandleFunc("/favicon.ico", handlerIcon).Methods("GET")
