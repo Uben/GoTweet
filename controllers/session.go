@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"database/sql"
-	"fmt"
 	_ "github.com/lib/pq"
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gowebapp/models"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -35,28 +35,22 @@ func (ctrl *SessionController) Create(res http.ResponseWriter, req *http.Request
 	password := req.PostFormValue("password")
 	retUser := Models.User{}
 
-	// Get the user info and scan it into the user struct
 	err := ctrl.Db.QueryRow("select id, name, email, username, password, created_at from users where email = $1 limit 1", email).Scan(&retUser.Id, &retUser.Name, &retUser.Email, &retUser.Username, &retUser.Hash, &retUser.Created_at)
 
 	if err != nil {
-		panic(err)
+		log.Println(err)
 	}
 
-	// Compare the user hash and password
 	pwd_match := bcrypt.CompareHashAndPassword([]byte(retUser.Hash), []byte(password))
 
-	// if the password match ^ (above) ^ doesnt return a error then continue
 	if pwd_match == nil {
-		fmt.Printf("\nCreating the session for the user '%s'.\n", retUser.Name)
+		log.Println("\nCreating the session for the user '%s'.\n", retUser.Name)
 
 		if err == nil {
-			// Create a new UUID for the session
+			current_time := time.Now()
 			user_uuid, err := uuid.NewV4()
-
-			// Set cookie Expire date to one day from now
 			expire := time.Now().AddDate(0, 0, 1)
 
-			// Set the "session" cookie values
 			session_cookie := &http.Cookie{
 				Name:     "session",
 				Value:    user_uuid.String(),
@@ -66,7 +60,6 @@ func (ctrl *SessionController) Create(res http.ResponseWriter, req *http.Request
 				MaxAge:   86400,
 			}
 
-			// Set the "session" cookie values
 			session_uid_cookie := &http.Cookie{
 				Name:     "session_uid",
 				Value:    strconv.Itoa(retUser.Id),
@@ -76,7 +69,6 @@ func (ctrl *SessionController) Create(res http.ResponseWriter, req *http.Request
 				MaxAge:   86400,
 			}
 
-			// Set the "session" cookie values
 			session_username_cookie := &http.Cookie{
 				Name:     "session_username",
 				Value:    retUser.Username,
@@ -86,27 +78,23 @@ func (ctrl *SessionController) Create(res http.ResponseWriter, req *http.Request
 				MaxAge:   86400,
 			}
 
-			// Set the Cookies
 			http.SetCookie(res, session_cookie)
 			http.SetCookie(res, session_uid_cookie)
 			http.SetCookie(res, session_username_cookie)
 
-			current_time := time.Now()
 			_, err = ctrl.Db.Exec("insert into sessions (user_id, token, created_at) values ($1, $2, $3)", &retUser.Id, user_uuid.String(), current_time)
 
 			if err != nil {
-				panic(err)
+				log.Println(err)
 			}
 
-			fmt.Printf("\nUser: %s, has logged in with Session ID UUID: '%s'", retUser.Name, user_uuid)
+			log.Println("\nUser: %s, has logged in with Session ID UUID: '%s'", retUser.Name, user_uuid)
 		} else {
-			// Get the "session" cookie
 			session_cookie, err := req.Cookie("session")
 
 			if err == nil {
-				fmt.Printf("\nUser: %s, is ALREADY logged in with Session ID UUID: '%s'", retUser.Name, session_cookie.Value)
+				log.Println("\nUser: %s, is ALREADY logged in with Session ID UUID: '%s'", retUser.Name, session_cookie.Value)
 			}
-
 		}
 
 	} else {
@@ -123,10 +111,9 @@ func (ctrl *SessionController) Delete(res http.ResponseWriter, req *http.Request
 		_, err := ctrl.Db.Exec("delete from sessions where token = $1", session_cookie.Value)
 
 		if err != nil {
-			panic(err)
+			log.Println(err)
 		}
 
-		// Set the "session" cookie values
 		session_cookie = &http.Cookie{
 			Name:     "session",
 			Value:    "",
@@ -135,7 +122,6 @@ func (ctrl *SessionController) Delete(res http.ResponseWriter, req *http.Request
 			Expires:  time.Now(),
 		}
 
-		// Set the "session" cookie values
 		session_uid_cookie := &http.Cookie{
 			Name:     "session_uid",
 			Value:    "",
@@ -144,7 +130,6 @@ func (ctrl *SessionController) Delete(res http.ResponseWriter, req *http.Request
 			Expires:  time.Now(),
 		}
 
-		// Set the "session" cookie values
 		session_username_cookie := &http.Cookie{
 			Name:     "session_username",
 			Value:    "",
@@ -153,7 +138,6 @@ func (ctrl *SessionController) Delete(res http.ResponseWriter, req *http.Request
 			Expires:  time.Now(),
 		}
 
-		// Set the Cookies
 		http.SetCookie(res, session_cookie)
 		http.SetCookie(res, session_uid_cookie)
 		http.SetCookie(res, session_username_cookie)

@@ -1,8 +1,6 @@
 package controllers
 
-import (
-	"text/template"
-)
+import "text/template"
 
 var tpl *template.Template
 
