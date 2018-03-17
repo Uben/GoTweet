@@ -44,6 +44,8 @@ type Tweet struct {
 	Message    string
 	Name       sql.NullString
 	Username   sql.NullString
+	rCount     int
+	fCount     int
 	Is_retweet bool
 	Otweet_id  int
 	Ouser_id   int
