@@ -1,9 +1,9 @@
-drop table if exists users cascade;
-drop table if exists user_meta;
-drop table if exists sessions;
-drop table if exists user_follows;
-drop table if exists tweets cascade;
-drop table if exists favorites;
+-- drop table if exists users cascade;
+-- drop table if exists user_meta;
+-- drop table if exists sessions;
+-- drop table if exists user_follows;
+-- drop table if exists tweets cascade;
+-- drop table if exists favorites;
 
 create table if not exists users (
 	id			serial primary key,
@@ -47,6 +47,7 @@ create table if not exists tweets (
 	favorite_count	integer default 0,
 	retweet_count	integer default 0,
 	is_retweet  	boolean default FALSE,
+	is_origin_live  boolean default TRUE,
 	origin_tweet_id int default 0,
 	origin_user_id 	int default 0,
 	origin_name 	varchar(255),
@@ -63,7 +64,8 @@ create table if not exists favorites (
 
 
 
-
+alter table tweets drop column is_origin_live;
+alter table tweets add column is_origin_live boolean default TRUE;
 
 
 

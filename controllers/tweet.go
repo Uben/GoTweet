@@ -75,21 +75,31 @@ func (ctrl *TweetController) Delete(res http.ResponseWriter, req *http.Request) 
 		log.Println(err)
 
 	} else {
-		retweet_count := tweet.RCount - 1
-
-		if tweet.Is_retweet == true {
-			_, err := ctrl.Db.Exec("update tweets set retweet_count = $1 where id = $2 or origin_tweet_id = $2", retweet_count, tweet.Otweet_id)
-
-			if err != nil {
-				log.Println(err)
-			}
-		}
-
 		if tweet.User_id == session.User_id {
+			if tweet.Is_retweet == true {
+				_, err := ctrl.Db.Exec("update tweets set retweet_count = retweet_count - 1 where id = $1 or origin_tweet_id = $1", tweet.Otweet_id)
+
+				if err != nil {
+					log.Println(err)
+				}
+			} else if tweet.Is_retweet == false {
+				_, err := ctrl.Db.Exec("update tweets set retweet_count = retweet_count - 1 where id = $1 or origin_tweet_id = $1", tweet.Id)
+
+				if err != nil {
+					log.Println(err)
+				}
+			}
+
 			_, err := ctrl.Db.Exec("delete from tweets where id = $1", tweet_id)
 
 			if err != nil {
 				log.Println(err)
+			} else if tweet.Is_retweet == false {
+				_, err := ctrl.Db.Exec("update tweets set is_origin_live = FALSE tweets where origin_tweet_id = $1", tweet_id)
+
+				if err != nil {
+					log.Println(err)
+				}
 			}
 		}
 	}

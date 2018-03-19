@@ -39,19 +39,20 @@ type Session struct {
 }
 
 type Tweet struct {
-	Id         int
-	User_id    int
-	Message    string
-	Name       sql.NullString
-	Username   sql.NullString
-	RCount     int
-	FCount     int
-	Is_retweet bool
-	Otweet_id  int
-	Ouser_id   int
-	Oname      sql.NullString
-	Ousername  sql.NullString
-	Created_at time.Time
+	Id             int
+	User_id        int
+	Message        string
+	Name           sql.NullString
+	Username       sql.NullString
+	RCount         int
+	FCount         int
+	Is_retweet     bool
+	Is_origin_live bool
+	Otweet_id      int
+	Ouser_id       int
+	Oname          sql.NullString
+	Ousername      sql.NullString
+	Created_at     time.Time
 }
 
 type Favorite struct {
