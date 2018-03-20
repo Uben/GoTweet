@@ -74,33 +74,31 @@ func (ctrl *TweetController) Delete(res http.ResponseWriter, req *http.Request) 
 	} else if err != nil {
 		log.Println(err)
 
-	} else {
-		if tweet.User_id == session.User_id {
-			if tweet.Is_retweet == true {
-				_, err := ctrl.Db.Exec("update tweets set retweet_count = retweet_count - 1 where id = $1 or origin_tweet_id = $1", tweet.Otweet_id)
-
-				if err != nil {
-					log.Println(err)
-				}
-			} else if tweet.Is_retweet == false {
-				_, err := ctrl.Db.Exec("update tweets set retweet_count = retweet_count - 1 where id = $1 or origin_tweet_id = $1", tweet.Id)
-
-				if err != nil {
-					log.Println(err)
-				}
-			}
-
-			_, err := ctrl.Db.Exec("delete from tweets where id = $1", tweet_id)
+	} else if tweet.User_id == session.User_id {
+		if tweet.Is_retweet == true {
+			_, err := ctrl.Db.Exec("update tweets set retweet_count = retweet_count - 1 where id = $1 or origin_tweet_id = $1", tweet.Otweet_id)
 
 			if err != nil {
 				log.Println(err)
-			} else if tweet.Is_retweet == false {
-				_, err := ctrl.Db.Exec("update tweets set is_origin_live = FALSE tweets where origin_tweet_id = $1", tweet_id)
-
-				if err != nil {
-					log.Println(err)
-				}
 			}
+		} else if tweet.Is_retweet == false {
+			_, err := ctrl.Db.Exec("update tweets set msg = 'Tweet was deleted D:', favorite_count = 0, retweet_count = 0, is_origin_live = FALSE where id = $1 or origin_tweet_id = $1", tweet.Id)
+
+			if err != nil {
+				log.Println(err)
+			}
+
+			_, err = ctrl.Db.Exec("delete from favorites where tweet_id = $1", tweet_id)
+
+			if err != nil {
+				log.Println(err)
+			}
+		}
+
+		_, err := ctrl.Db.Exec("delete from tweets where id = $1", tweet_id)
+
+		if err != nil {
+			log.Println(err)
 		}
 	}
 
