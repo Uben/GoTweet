@@ -81,24 +81,26 @@ func (ctrl *TweetController) Delete(res http.ResponseWriter, req *http.Request) 
 			if err != nil {
 				log.Println(err)
 			}
+
+			_, err = ctrl.Db.Exec("delete from tweets where id = $1", tweet_id)
+
+			if err != nil {
+				log.Println(err)
+			}
+
 		} else if tweet.Is_retweet == false {
-			_, err := ctrl.Db.Exec("update tweets set msg = 'Tweet was deleted D:', favorite_count = 0, retweet_count = 0, is_origin_live = FALSE where id = $1 or origin_tweet_id = $1", tweet.Id)
+			_, err := ctrl.Db.Exec("delete from tweets where id = $1 or origin_tweet_id = $1", tweet_id)
 
 			if err != nil {
 				log.Println(err)
+
+			} else if err == nil {
+				_, err = ctrl.Db.Exec("delete from favorites where tweet_id = $1", tweet_id)
+
+				if err != nil {
+					log.Println(err)
+				}
 			}
-
-			_, err = ctrl.Db.Exec("delete from favorites where tweet_id = $1", tweet_id)
-
-			if err != nil {
-				log.Println(err)
-			}
-		}
-
-		_, err := ctrl.Db.Exec("delete from tweets where id = $1", tweet_id)
-
-		if err != nil {
-			log.Println(err)
 		}
 	}
 
