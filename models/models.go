@@ -61,3 +61,10 @@ type Favorite struct {
 	Tweet_id   int
 	Created_at time.Time
 }
+
+type Retweets struct {
+	Id         int
+	User_id    int
+	Tweet_id   int
+	Created_at time.Time
+}

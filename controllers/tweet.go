@@ -75,8 +75,19 @@ func (ctrl *TweetController) Delete(res http.ResponseWriter, req *http.Request) 
 		log.Println(err)
 
 	} else if tweet.User_id == session.User_id {
-		if tweet.Is_retweet == true {
+		if tweet.Is_retweet {
 			_, err := ctrl.Db.Exec("update tweets set retweet_count = retweet_count - 1 where id = $1 or origin_tweet_id = $1", tweet.Otweet_id)
+
+			if err != nil {
+				log.Println(err)
+			}
+
+			user_id, err := req.Cookie("session_uid")
+			if err != nil {
+				log.Println(err)
+			}
+
+			_, err = ctrl.Db.Exec("delete from retweets where user_id = $1 and tweet_id = $2", user_id.Value, tweet.Otweet_id)
 
 			if err != nil {
 				log.Println(err)
@@ -88,18 +99,23 @@ func (ctrl *TweetController) Delete(res http.ResponseWriter, req *http.Request) 
 				log.Println(err)
 			}
 
-		} else if tweet.Is_retweet == false {
-			_, err := ctrl.Db.Exec("delete from tweets where id = $1 or origin_tweet_id = $1", tweet_id)
+		} else {
+			_, err := ctrl.Db.Exec("delete from favorites where tweet_id = $1", tweet_id)
 
 			if err != nil {
 				log.Println(err)
+			}
 
-			} else if err == nil {
-				_, err = ctrl.Db.Exec("delete from favorites where tweet_id = $1", tweet_id)
+			_, err = ctrl.Db.Exec("delete from retweets where tweet_id = $1", tweet_id)
 
-				if err != nil {
-					log.Println(err)
-				}
+			if err != nil {
+				log.Println(err)
+			}
+
+			_, err = ctrl.Db.Exec("delete from tweets where id = $1 or origin_tweet_id = $1", tweet_id)
+
+			if err != nil {
+				log.Println(err)
 			}
 		}
 	}
@@ -134,17 +150,32 @@ func (ctrl *TweetController) Retweet(res http.ResponseWriter, req *http.Request)
 		log.Println(err)
 	}
 
-	if tweet.Is_retweet == false {
-		_, err := ctrl.Db.Exec("insert into tweets (user_id, msg, name, username, favorite_count, retweet_count, is_retweet, origin_tweet_id, origin_user_id, origin_name, origin_username, created_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", retUser.Id, tweet.Message, retUser.Name, retUser.Username, tweet.FCount, tweet.RCount, is_retweet, tweet.Id, tweet.User_id, tweet.Name, tweet.Username, current_time)
-
-		if err != nil {
-			log.Println(err)
-		}
-	} else {
+	if tweet.Is_retweet {
 		_, err := ctrl.Db.Exec("insert into tweets (user_id, msg, name, username, favorite_count, retweet_count, is_retweet, origin_tweet_id, origin_user_id, origin_name, origin_username, created_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", retUser.Id, tweet.Message, retUser.Name, retUser.Username, tweet.FCount, tweet.RCount, is_retweet, tweet.Otweet_id, tweet.Ouser_id, tweet.Oname, tweet.Ousername, current_time)
 
 		if err != nil {
 			log.Println(err)
+
+		} else if err == nil {
+			_, err = ctrl.Db.Exec("insert into retweets (user_id, tweet_id, created_at) values ($1, $2, $3)", user_id.Value, tweet.Otweet_id, current_time)
+
+			if err != nil {
+				log.Println(err)
+			}
+		}
+
+	} else {
+		_, err := ctrl.Db.Exec("insert into tweets (user_id, msg, name, username, favorite_count, retweet_count, is_retweet, origin_tweet_id, origin_user_id, origin_name, origin_username, created_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", retUser.Id, tweet.Message, retUser.Name, retUser.Username, tweet.FCount, tweet.RCount, is_retweet, tweet.Id, tweet.User_id, tweet.Name, tweet.Username, current_time)
+
+		if err != nil {
+			log.Println(err)
+
+		} else if err == nil {
+			_, err := ctrl.Db.Exec("insert into retweets (user_id, tweet_id, created_at) values ($1, $2, $3)", user_id.Value, tweet_id, current_time)
+
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	}
 

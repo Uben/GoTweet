@@ -62,10 +62,15 @@ create table if not exists favorites (
 	created_at	timestamp
 );
 
+create table if not exists retweets (
+	id 				serial primary key,
+	user_id 		integer references users(id),
+	tweet_id 		integer references tweets(id),
+	created_at		timestamp
+);
 
-
-alter table tweets drop column is_origin_live;
-alter table tweets add column is_origin_live boolean default TRUE;
+-- alter table tweets drop column is_origin_live;
+-- alter table tweets add column is_origin_live boolean default TRUE;
 
 
 
