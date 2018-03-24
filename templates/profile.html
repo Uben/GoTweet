@@ -4,7 +4,9 @@
 		<p>
 			<span> @{{ .Username }} </span> </br>
 			{{ if .isUserLoggedIn }}
-				<a href="/follow-user/{{ .ProfileUID }}"> Follow @{{ .Username }} </a> <br>
+				{{ if ne .ProfileUID .LoggedInUID }}
+					<a href="/follow-user/{{ .ProfileUID }}"> Follow @{{ .Username }} </a> <br>
+				{{ end }}
 			{{ end }}
 
 			{{ if .UrlSet }}

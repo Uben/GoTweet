@@ -22,26 +22,28 @@ func (ctrl *TweetController) Create(res http.ResponseWriter, req *http.Request) 
 	req.ParseForm()
 	tweet_text := req.PostFormValue("tweet")
 
-	retUser := Models.User{}
-	current_time := time.Now()
-	is_retweet := false
+	if tweet_text != "" {
+		retUser := Models.User{}
+		current_time := time.Now()
+		is_retweet := false
 
-	user_id, err := req.Cookie("session_uid")
+		user_id, err := req.Cookie("session_uid")
 
-	if err != nil {
-		log.Println(err)
-	}
+		if err != nil {
+			log.Println(err)
+		}
 
-	err = ctrl.Db.QueryRow("select id, name, email, username, password, created_at, updated_at from users where id = $1", user_id.Value).Scan(&retUser.Id, &retUser.Name, &retUser.Email, &retUser.Username, &retUser.Hash, &retUser.Created_at, &retUser.Updated_at)
+		err = ctrl.Db.QueryRow("select id, name, email, username, password, created_at, updated_at from users where id = $1", user_id.Value).Scan(&retUser.Id, &retUser.Name, &retUser.Email, &retUser.Username, &retUser.Hash, &retUser.Created_at, &retUser.Updated_at)
 
-	if err != nil {
-		log.Println(err)
-	}
+		if err != nil {
+			log.Println(err)
+		}
 
-	_, err = ctrl.Db.Exec("insert into tweets (user_id, msg, name, username, is_retweet, origin_user_id, origin_name, origin_username, created_at) values ($1, $2, $3, $4, $5, $1, $3, $4, $6)", retUser.Id, tweet_text, retUser.Name, retUser.Username, is_retweet, current_time)
+		_, err = ctrl.Db.Exec("insert into tweets (user_id, msg, name, username, is_retweet, origin_user_id, origin_name, origin_username, created_at) values ($1, $2, $3, $4, $5, $1, $3, $4, $6)", retUser.Id, tweet_text, retUser.Name, retUser.Username, is_retweet, current_time)
 
-	if err != nil {
-		log.Println(err)
+		if err != nil {
+			log.Println(err)
+		}
 	}
 
 	http.Redirect(res, req, "/", 302)

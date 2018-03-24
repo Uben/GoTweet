@@ -26,8 +26,8 @@ type UserMeta struct {
 
 type Follow struct {
 	Id           int
-	follower_id  int
-	following_id int
+	Follower_id  int
+	Following_id int
 	Created_at   time.Time
 }
 
